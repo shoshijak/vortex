@@ -19,11 +19,14 @@ find_package(HPX)
 set(SOURCE_FILES
 				src/kernels.cpp
 				src/main.cpp
+				src/hpx-main.cpp
+				src/run-tests.cpp
 				src/tree.cpp
 )
 
 set(HEADER_FILES
 				vrtx/kernels.h
+				vrtx/simulation.h
 				vrtx/timer.h
 				vrtx/tree_prepare.h
 				vrtx/tree.h
@@ -55,6 +58,7 @@ add_hpx_executable(hpx-vortex
   ESSENTIAL
   SOURCES src/hpx-main.cpp
 					src/kernels.cpp
+					src/run-tests.cpp
 					src/tree.cpp
   COMPONENT_DEPENDENCIES iostreams
 )
