@@ -44,8 +44,8 @@ set(HEADER_FILES
 #	OUTPUT_FILE ${m4_out}
 #)
 #message("Generated ${m4_out} from ${m4_inp}")
-message("Creating executable... ")
-add_executable(vortex src/main.cpp src/kernels.cpp src/tree.cpp)
+#message("Creating executable... ")
+#add_executable(vortex src/main.cpp src/kernels.cpp src/tree.cpp)
 
 #####################################
 # hpx program												#
