@@ -15,7 +15,7 @@ int hpx_main()
     double tol_ = 1e-8; // is supposed to be the same as tol in run_tests.cpp, but I was having linker errors
 
     char filename[256];
-  	strcpy(filename, "test-data/dN400");
+        strcpy(filename, "../../test-data/dN400");
 
   	if (access(filename, R_OK) == -1)
   	{
@@ -29,7 +29,9 @@ int hpx_main()
 
   	assert(fin && sizeof(double) == sizeof(double));
 
-    test(theta, tol_, fin, verify);
+//    size_t N(25);
+//    for(size_t i(0);i<N;i++)
+      test(theta, tol_, fin, verify);
 
     return hpx::finalize();
 }
