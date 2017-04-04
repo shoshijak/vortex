@@ -3,13 +3,6 @@
 #include <hpx/hpx_init.hpp>
 #include <hpx/include/iostreams.hpp>
 
-#include <unistd.h>                     // C
-#include <cstdlib>
-#include <cstdio>
-#include <cmath>
-#include <cassert>
-#include <cstring>
-
 #include "simulation.h"
 
 
