@@ -103,7 +103,8 @@ void build(const double* const x, const double*const y, const double* mass, cons
 	posix_memalign((void **)&index, 32, sizeof(int) * n);
 	posix_memalign((void **)&keys,  32, sizeof(int) * n);
 
-	#pragma omp parallel for	
+// TODO I should probably parallelize this with a large chunking policy
+//	#pragma omp parallel for
 	for (int i=0; i<n; i++)
 		keys[i] = i;
 

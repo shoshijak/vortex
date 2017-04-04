@@ -8,6 +8,10 @@
 #include <algorithm>
 #endif
 
+#include <hpx/parallel/algorithms/minmax.hpp>
+#include <hpx/include/parallel_for_loop.hpp>
+#include <hpx/parallel/algorithms/sort.hpp>
+
 #include <cmath>
 
 #define LMAX 15
@@ -16,6 +20,7 @@ void minmax_vec(const double xsrc[], const double ysrc[], const int nsources, do
 {
 	double lxmi = 1e13, lymi = 1e13, lxma = -1e13, lyma = -1e13;
 
+#ifdef RUN_WITH_OMP
 	for(int i = 0; i < nsources; ++i)
 	{
 		const double xval = xsrc[i];
@@ -28,10 +33,24 @@ void minmax_vec(const double xsrc[], const double ysrc[], const int nsources, do
 		lyma = fmax(lyma, yval);
 	}
 
-	xmin_xmax_ymin_ymax[0] = lxmi;
-	xmin_xmax_ymin_ymax[1] = lxma;
-	xmin_xmax_ymin_ymax[2] = lymi;
-	xmin_xmax_ymin_ymax[3] = lyma;
+        xmin_xmax_ymin_ymax[0] = lxmi;
+        xmin_xmax_ymin_ymax[1] = lxma;
+        xmin_xmax_ymin_ymax[2] = lymi;
+        xmin_xmax_ymin_ymax[3] = lyma;
+#else
+        auto minmaxX = hpx::parallel::minmax_element(
+                    hpx::parallel::execution::par,
+                    xsrc,
+                    xsrc+nsources);
+        auto minmaxY = hpx::parallel::minmax_element(
+                    hpx::parallel::execution::par,
+                    ysrc,
+                    ysrc+nsources);
+#endif
+        xmin_xmax_ymin_ymax[0] = *minmaxX.first;
+        xmin_xmax_ymin_ymax[1] = *minmaxX.second;
+        xmin_xmax_ymin_ymax[2] = *minmaxY.first;
+        xmin_xmax_ymin_ymax[3] = *minmaxY.second;
 }
 
 void extent(const int N, const double* const x, const double* const y,
@@ -45,7 +64,8 @@ void extent(const int N, const double* const x, const double* const y,
 
 		double xpartials[2][nthreads], ypartials[2][nthreads];
 
-		#pragma omp parallel
+// TODO revisit the structure of this
+//		#pragma omp parallel
 		{
 			const int tid = omp_get_thread_num();
 
@@ -89,6 +109,8 @@ void extent(const int N, const double* const x, const double* const y,
 void morton(const int N, const double* const x, const double* const y,
 			const double xmin, const double ymin, const double ext, int* index)
 {
+
+#ifdef RUN_WITH_OMP
 	#pragma omp parallel for
 	for(int i = 0; i < N; ++i)
 	{
@@ -107,6 +129,25 @@ void morton(const int N, const double* const x, const double* const y,
 
 		index[i] = xid | (yid << 1);
 	}
+#else
+    hpx::parallel::for_loop(hpx::parallel::execution::par, 0, N,
+                       [&](int i){
+            int xid = floor((x[i] - xmin) / ext * (1 << LMAX));
+            int yid = floor((y[i] - ymin) / ext * (1 << LMAX));
+
+            xid = (xid | (xid << 8)) & 0x00FF00FF;
+            xid = (xid | (xid << 4)) & 0x0F0F0F0F;
+            xid = (xid | (xid << 2)) & 0x33333333;
+            xid = (xid | (xid << 1)) & 0x55555555;
+
+            yid = (yid | (yid << 8)) & 0x00FF00FF;
+            yid = (yid | (yid << 4)) & 0x0F0F0F0F;
+            yid = (yid | (yid << 2)) & 0x33333333;
+            yid = (yid | (yid << 1)) & 0x55555555;
+
+            index[i] = xid | (yid << 1);
+    });
+#endif
 }
 
 void sort(const int N, int* index, int* keys)
@@ -114,32 +155,58 @@ void sort(const int N, int* index, int* keys)
 	std::pair<int, int> * kv = NULL;
 	posix_memalign((void **)&kv, 32, sizeof(*kv) * N);
 
+#ifdef RUN_WITH_OMP
 	#pragma omp parallel for
 	for(int i = 0; i < N; ++i)
 	{
 		kv[i].first = index[i];
 		kv[i].second = keys[i];
 	}
-
+#else
+        hpx::parallel::for_loop(hpx::parallel::execution::par, 0, N,
+                                [&](int i)
+        {
+                kv[i].first = index[i];
+                kv[i].second = keys[i];
+        }
+                                );
+#endif
+#ifdef RUN_WITH_OMP
 #if  !defined(__INTEL_COMPILER) && !defined(__clang__)
 	__gnu_parallel::sort(kv, kv + N);
 #else
 	std::sort(kv, kv + N);
 #endif
+#else
+        __gnu_parallel::sort(kv, kv + N);
+        hpx::parallel::sort(
+                    hpx::parallel::execution::par,
+                    kv, kv+N);
+#endif
 
-
+#ifdef RUN_WITH_OMP
 	#pragma omp parallel for
 	for(int i = 0; i < N; ++i)
 	{
 		index[i] = kv[i].first;
 		keys[i] = kv[i].second;
 	}
-
+#else
+        hpx::parallel::for_loop(hpx::parallel::execution::par,
+                                0, N, [&](int i)
+        {
+                index[i] = kv[i].first;
+                keys[i] = kv[i].second;
+        }
+                                );
+#endif
 	free(kv);
 }
 
 void reorder(const int N, const int* const keys, const double* const x, const double* const y, const double* const m, double* xsorted, double* ysorted, double *msorted)
 {
+
+#ifdef RUN_WITH_OMP
 	#pragma omp parallel for
 	for(int i = 0; i < N; ++i)
 	{
@@ -149,6 +216,17 @@ void reorder(const int N, const int* const keys, const double* const x, const do
 		ysorted[i] = y[entry];
 		msorted[i] = m[entry];
 	}
+#else
+    hpx::parallel::for_loop(hpx::parallel::execution::par,
+                            0, N, [&](int i)
+    {
+            const int entry = keys[i];
+
+            xsorted[i] = x[entry];
+            ysorted[i] = y[entry];
+            msorted[i] = m[entry];
+    });
+#endif
 }
 
 inline void node_setup(const double xsources[], const double ysources[], const double msources[], const int nsources,

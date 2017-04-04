@@ -214,8 +214,10 @@ void test(double theta, double tol, FILE * f, bool verify)
 	if (verify)
 	{
 		const int OFFSET = 0;
-		const int JUMP = 1;
-		for(int i = OFFSET; i < NDST; i += JUMP)
+
+#ifdef RUN_WITH_OMP
+#pragma omp parallel for
+		for(int i = OFFSET; i < NDST; i++)
 		{
 			const double xd = xdst[i];
 			const double yd = ydst[i];
@@ -232,10 +234,30 @@ void test(double theta, double tol, FILE * f, bool verify)
 			}
 			xref[i] = s;
 		}
+#else
+		hpx::parallel::for_loop(hpx::parallel::execution::par, OFFSET, NDST,
+		[&](int i)
+		{
+			const double xd = xdst[i];
+			const double yd = ydst[i];
+			double s = 0;
+
+			for(int j = 0; j < NSRC; ++j)
+			{
+				const double xr = xd - xsrc[j];
+				const double yr = yd - ysrc[j];
+				const double r2 = xr * xr + yr * yr;
+				const double f  = fabs(r2) > eps;
+				s += 0.5 * f * log(r2 + eps) * sources[j];
+			}
+			xref[i] = s;
+		});
+#endif
+
 
 		std::vector<double> a, b, c, d;
 
-		for(int i = OFFSET; i < NDST; i += JUMP)
+		for(int i = OFFSET; i < NDST; i++)
 		{
 			a.push_back(xref[i]);
 			b.push_back(xtargets[i]);
