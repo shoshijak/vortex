@@ -10,6 +10,8 @@
 #include <limits>
 #include <vector>
 
+#include <hpx/include/parallel_for_loop.hpp>
+
 #include "timer.h"
 #include "tree.h"
 #include "kernels.h"
@@ -140,10 +142,23 @@ void potential(double theta, double *xsrc, double *ysrc, double *sources, int NS
 	Timer tm;
 	tm.start();
 
+#ifdef RUN_WITH_OMP
 	#pragma omp parallel for schedule(static,1)
 	for(int i = 0; i < NDST; ++i)
+	  {
+		  evaluate(nodes, expansions, xsorted, ysorted, msorted,
+				  thetasquared, xtargets + i, xdst[i], ydst[i]);
+	  }
+#else
+	hpx::parallel::for_loop(
+		hpx::parallel::execution::par, 0, NDST,
+		[&](int i)
+#endif
+	{
 		evaluate(nodes, expansions, xsorted, ysorted, msorted,
 				thetasquared, xtargets + i, xdst[i], ydst[i]);
+	});
+
 	double t = tm.elapsed();
 	printf("Evaluation took %.3f ms (%.3f us per target)\n", t*1e-6, t*1e-3 / NDST);
 
@@ -200,8 +215,6 @@ void test(double theta, double tol, FILE * f, bool verify)
 	{
 		const int OFFSET = 0;
 		const int JUMP = 1;
-
-#pragma omp parallel for
 		for(int i = OFFSET; i < NDST; i += JUMP)
 		{
 			const double xd = xdst[i];

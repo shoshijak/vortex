@@ -8,7 +8,11 @@
 
 int hpx_main()
 {
-    hpx::cout << "Starting HPX application - VORTEX with HPX\n";
+#ifdef RUN_WITH_OMP
+  hpx::cout << "Starting VORTEX application - with OpenMP\n";
+#else
+  hpx::cout << "Running VORTEX application - with HPX\n";
+#endif
 
     double theta = 0.5;
     bool verify = true;
@@ -46,7 +50,7 @@ int main(int argc, char* argv[])
 
                   RESULTS
 
------------------ Regular code from TA (branch master)
+----------------- Regular code from FS16 (branch master)
 
 
 
