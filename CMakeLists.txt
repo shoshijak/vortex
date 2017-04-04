@@ -51,13 +51,10 @@ set(HEADER_FILES
 # hpx program												#
 #####################################
 
-#add_hpx_executable(vortex-hpx
-#  ESSENTIAL
-#  SOURCES main/hpx-main.cpp
-#					src/run_simulation.cpp
-#					src/datapoints.cpp
-#					src/morton.cpp
-#					src/expansion.cpp
-#	        src/complexAVX.cpp
-#  COMPONENT_DEPENDENCIES iostreams
-#)
+add_hpx_executable(vortex-hpx
+  ESSENTIAL
+  SOURCES src/hpx-main.cpp
+					src/kernels.cpp
+					src/tree.cpp
+  COMPONENT_DEPENDENCIES iostreams
+)
