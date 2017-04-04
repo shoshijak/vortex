@@ -51,7 +51,7 @@ set(HEADER_FILES
 # hpx program												#
 #####################################
 
-add_hpx_executable(vortex-hpx
+add_hpx_executable(hpx-vortex
   ESSENTIAL
   SOURCES src/hpx-main.cpp
 					src/kernels.cpp
