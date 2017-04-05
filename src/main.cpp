@@ -264,7 +264,7 @@ int main(int argc, char ** argv)
 		verify = strcmp(argv[3], "profile") != 0;
 
 	char filename[256];
-	strcpy(filename, "test-data/dN400");
+        strcpy(filename, "../../test-data/dN400");
 //	strcpy(filename, "testDiego/diegoBinaryN2000");
 //	strcpy(filename, "testDiego/diegoBinaryN12000");
 

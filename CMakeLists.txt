@@ -10,7 +10,7 @@ include_directories(vrtx)
 
 find_package(HPX)
 
-# build all of this with
+# if with HPX: build all of this with
 # cmake -DHWLOC_ROOT=/usr/local/include/hwloc
 #				-DHPX_WITH_MALLOC=jemalloc
 #				-DHPX_DIR=~/Documents/CSCS/hpx-build/lib/cmake/HPX
@@ -45,7 +45,7 @@ set(HEADER_FILES
 #)
 #message("Generated ${m4_out} from ${m4_inp}")
 #message("Creating executable... ")
-#add_executable(vortex src/main.cpp src/kernels.cpp src/tree.cpp)
+add_executable(vortex src/main.cpp src/kernels.cpp src/tree.cpp)
 
 #####################################
 # hpx program												#
