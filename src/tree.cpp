@@ -121,10 +121,11 @@ void build(const double* const x, const double*const y, const double* mass, cons
 	reorder(n, keys, x, y, mass, xsorted, ysorted, mass_sorted);
 	reoTm = 1e-6 * tm.elapsed();
 
+#ifdef SMALL_SIMULATION
 	if (n <= 100)
 		for (int i=0; i<n; i++)
 			printf("%2d : coordinates = [%6f %6f], ind = %x\n", i, xsorted[i], ysorted[i], index[i]); 
-
+#endif
 	auto builder = new TreeBuilder(nodes, (n + k - 1) / k * 6,
 						xsorted, ysorted, mass_sorted, index, ext, xmin, ymin, k, expansions);
 
@@ -132,7 +133,7 @@ void build(const double* const x, const double*const y, const double* mass, cons
 	#pragma omp parallel
 	#pragma omp single nowait
 	{
-		nodes[0].setup(0, n, 0, 0);
+		nodes[0].setup(0, n, 0, 0); // shouldn't we take thisout of the parallel region?
 		builder->build_tree(0);
 	}
 	bldTm = 1e-6 * tm.elapsed();
