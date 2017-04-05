@@ -30,6 +30,9 @@ struct Node
 };
 
 void build(const double* const x, const double* const y, const double* mass, const int n, const int k,
-	double* xsorted, double* ysorted, double* mass_sorted, Node *nodes, double *expansions);
+        double* xsorted, double* ysorted, double* mass_sorted,
+           Node *nodes, double *expansions,
+           const double &exTm, const double &morTm,
+           const double &sorTm, const double &reoTm, const double &bldTm);
 
 
