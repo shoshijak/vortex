@@ -50,11 +50,8 @@ int main(int argc, char* argv[])
 
                   RESULTS
 
------------------ Regular code from FS16 (branch master)
-
-
-
 ----------------  Regular code in an HPX main (branch vrtxhpx)
+
 reading from <test-data/dN400> ...
 Testing POTENTIAL with 216064 sources and 354 targets (theta 5.000e-01)...
 TIME for N = 216064 (18085 nodes)  is  280.00 ms
@@ -70,12 +67,40 @@ l-infinity errors: 5.504e-09 (absolute) 1.713e-06 (relative)
 TEST PASSED.
 Starting HPX application - VORTEX with HPX
 
+OpenMP spawns extra threads: there is contention
 
 
+----------------- Regular code from FS16 (branch master)
 
+reading from <test-data/dN400> ...
+Testing POTENTIAL with 216064 sources and 354 targets (theta 5.000e-01)...
+TIME for N = 216064 (18085 nodes)  is   38.27 ms
+	extent:   1.22 ms
+	morton:   2.15 ms
+	sorting:   5.50 ms
+	reordering:   1.07 ms
+	building:  28.33 ms
+Evaluation took 3.640 ms (10.282 us per target)
+solved in 46.23 ms
+l-infinity errors: 5.504e-09 (absolute) 1.713e-06 (relative)
+       l-1 errors: 2.597e-07 (absolute) 4.258e-05 (relative)
+TEST PASSED.
 
+----------------------------------- replaced (for, minmax, sort)
 
-
+Testing POTENTIAL with 216064 sources and 354 targets (theta 5.000e-01)...
+TIME for N = 216064 (18085 nodes)  is  158.40 ms
+	extent:   1.20 ms
+	morton:   1.25 ms
+	sorting:  95.17 ms
+	reordering:   3.54 ms
+	building:  57.24 ms
+Evaluation took 2.236 ms (6.316 us per target)
+solved in 161.62 ms
+l-infinity errors: 5.504e-09 (absolute) 1.713e-06 (relative)
+       l-1 errors: 2.597e-07 (absolute) 4.258e-05 (relative)
+TEST PASSED.
+Running VORTEX application - with HPX
 
 
 *******************************************************************************/

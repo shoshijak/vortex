@@ -178,7 +178,6 @@ void sort(const int N, int* index, int* keys)
 	std::sort(kv, kv + N);
 #endif
 #else
-        __gnu_parallel::sort(kv, kv + N);
         hpx::parallel::sort(
                     hpx::parallel::execution::par,
                     kv, kv+N);
