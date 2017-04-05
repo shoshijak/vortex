@@ -12,8 +12,8 @@ find_package(HPX)
 
 # build all of this with
 # cmake -DHWLOC_ROOT=/usr/local/include/hwloc
-#				-DHPX_WITH_MALLOC=jemalloc
-#				-DHPX_DIR=~/Documents/CSCS/hpx-build/lib/cmake/HPX
+#	-DHPX_WITH_MALLOC=jemalloc
+#       -DHPX_DIR=~/Documents/CSCS/hpx-build/lib/cmake/HPX
 
 
 set(SOURCE_FILES
@@ -57,7 +57,7 @@ set(HEADER_FILES
 add_hpx_executable(hpx-vortex
   ESSENTIAL
   SOURCES src/hpx-main.cpp
-					src/kernels.cpp
+        src/kernels.cpp
 					src/run-tests.cpp
 					src/tree.cpp
   COMPONENT_DEPENDENCIES iostreams
