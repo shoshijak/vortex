@@ -19,7 +19,7 @@ int hpx_main()
 
   	if (access(filename, R_OK) == -1)
   	{
-  		printf("WARNING: reference file <%s> not found.\n", filename);
+                printf("WARNING: reference file <%s> not found. \n", filename);
   		return 1;
   	}
   	else

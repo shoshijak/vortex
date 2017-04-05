@@ -1,8 +1,6 @@
 
 ----------------- Regular code from FS16 (branch master)
 
------------------ Regular code from FS16 (branch master)
-
 reading from <test-data/dN400> ...
 Testing POTENTIAL with 216064 sources and 354 targets (theta 5.000e-01)...
 TIME for N = 216064 (18085 nodes)  is   38.27 ms
@@ -17,6 +15,19 @@ l-infinity errors: 5.504e-09 (absolute) 1.713e-06 (relative)
        l-1 errors: 2.597e-07 (absolute) 4.258e-05 (relative)
 TEST PASSED.
 
+
+Testing POTENTIAL with 216064 sources and 354 targets (theta 5.000e-01)...
+TIME for N = 216064 (18085 nodes)  is   147,44 ms
+	extent:   20.2 ms
+	morton:   15.58 ms
+	sorting:   58,67 ms
+	reordering:   8,34 ms
+	building:  38,32 ms
+Evaluation took 6,51 ms (7.056 us per target)
+solved in 173,9 ms
+l-infinity errors: 5.504e-09 (absolute) 1.713e-06 (relative)
+       l-1 errors: 2.597e-07 (absolute) 4.258e-05 (relative)
+TEST PASSED.
 
 
 ----------------  Regular code in an HPX main (branch vrtxhpx)

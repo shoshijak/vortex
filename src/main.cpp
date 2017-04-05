@@ -264,13 +264,13 @@ int main(int argc, char ** argv)
 		verify = strcmp(argv[3], "profile") != 0;
 
 	char filename[256];
-        strcpy(filename, "../../test-data/dN400");
+        strcpy(filename, "/home/shoshijak/Documents/CSCS/learning/vortex/v-hpx/test-data/dN400");
 //	strcpy(filename, "testDiego/diegoBinaryN2000");
 //	strcpy(filename, "testDiego/diegoBinaryN12000");
 
 	if (access(filename, R_OK) == -1)
 	{
-		printf("WARNING: reference file <%s> not found.\n", filename);
+                printf("WARNING: reference file <%s> not found. :-(\n", filename);
 		return 1;
 	}
 	else
