@@ -114,8 +114,12 @@ void evaluate(const Node* nodes, const double* expansions, const double *xdata, 
 }
 
 
-void potential(double theta, double *xsrc, double *ysrc, double *sources, int NSRC,
-			  double *xdst, double *ydst, int NDST, double *xtargets)
+void potential(double theta,
+	       double *xsrc, double *ysrc,
+	       double *sources, int NSRC,
+	       double *xdst, double *ydst, int NDST, double *xtargets
+	       double const& extT, double const& mrtT, double const& srtT,
+	       double const& reoT, double const& bldT, double const& evaT)
 {
 	double *x, *y, *m, *xsorted, *ysorted, *msorted;
 	double *expansions;
@@ -135,7 +139,8 @@ void potential(double theta, double *xsrc, double *ysrc, double *sources, int NS
 	posix_memalign((void **)&nodes, 32, sizeof(Node) * maxnodes);
 	posix_memalign((void **)&expansions, 32, sizeof(double) * 2 * ORDER * maxnodes);
 
-	build(x, y, m, n, k, xsorted, ysorted, msorted, nodes, expansions);
+	build(x, y, m, n, k, xsorted, ysorted, msorted, nodes, expansions,
+	      extT, mrtT, srtT, reoT, bldT);
 
 	double thetasquared = theta*theta;
 
@@ -155,12 +160,11 @@ void potential(double theta, double *xsrc, double *ysrc, double *sources, int NS
 		[&](int i)
 #endif
 	{
-		evaluate(nodes, expansions, xsorted, ysorted, msorted,
-				thetasquared, xtargets + i, xdst[i], ydst[i]);
+		evaluate(nodes, expansions, xsorted, ysorted, msorted,	
+			 thetasquared, xtargets + i, xdst[i], ydst[i]);
 	});
 
-	double t = tm.elapsed();
-	printf("Evaluation took %.3f ms (%.3f us per target)\n", t*1e-6, t*1e-3 / NDST);
+	double evaT = tm.elapsed();
 
 	free(xsorted);
 	free(ysorted);
@@ -169,7 +173,10 @@ void potential(double theta, double *xsrc, double *ysrc, double *sources, int NS
 	free(expansions);
 }
 
-void test(double theta, double tol, FILE * f, bool verify)
+void test(double theta, double tol, FILE * f, bool verify,
+	  double const& extT, double const& mrtT, double const& srtT,
+	  double const& reoT, double const& bldT, double const& evaT,
+	  double const& potT)
 {
 	int NSRC;
 	fread(&NSRC, sizeof(int), 1, f);
@@ -206,10 +213,9 @@ void test(double theta, double tol, FILE * f, bool verify)
 
 	Timer tm;
 	tm.start();
-	potential(theta, xsrc, ysrc, sources, NSRC, xdst, ydst, NDST, xtargets);
-	const double tpot = tm.elapsed();
-
-	printf("\x1b[94msolved in %.2f ms\x1b[0m\n", tpot * 1e-6);
+	potential(theta, xsrc, ysrc, sources, NSRC,
+		  xdst, ydst, NDST, xtargets);
+	potT = tm.elapsed();
 
 	if (verify)
 	{

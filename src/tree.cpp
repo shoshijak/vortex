@@ -93,10 +93,12 @@ void TreeBuilder::build_tree(const int nodeid)
 
 // n = nsrc, k = max leaf capacity
 void build(const double* const x, const double*const y, const double* mass, const int n, const int k,
-	double* xsorted, double* ysorted, double* mass_sorted, Node *nodes, double *expansions)
+	double* xsorted, double* ysorted, double* mass_sorted,
+	   Node *nodes, double *expansions,
+	   double const& exTm, double const& morTm, double const& sorTm,
+	   double const& reoTm, double const& bldTm)
 {
 	Timer tm;
-	double exTm, morTm, sorTm, reoTm, bldTm;
 	int *index, *keys;
 	double ext, xmin, ymin;
 
@@ -137,10 +139,6 @@ void build(const double* const x, const double*const y, const double* mass, cons
 		builder->build_tree(0);
 	}
 	bldTm = 1e-6 * tm.elapsed();
-
-	printf("TIME for N = %d (%d nodes)  is  %6.2f ms\n", n, builder->currnnodes, exTm+morTm+sorTm+reoTm+bldTm);
-	printf("\textent: %6.2f ms\n\tmorton: %6.2f ms\n\tsorting: %6.2f ms\n\treordering: %6.2f ms\n\tbuilding: %6.2f ms\n",
-			exTm, morTm, sorTm, reoTm, bldTm);
 
 	free(index);
 	free(keys);

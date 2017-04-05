@@ -33,9 +33,14 @@ int hpx_main()
 
   	assert(fin && sizeof(double) == sizeof(double));
 
-//    size_t N(25);
-//    for(size_t i(0);i<N;i++)
-      test(theta, tol_, fin, verify);
+        double const& extT, mrtT, srtT, reoT, bldT, evaT, potT;
+
+        test(theta, tol_, fin, verify,
+             extT, mrtT, srtT, reoT, bldT, evaT, potT);
+
+        printf("Evaluation took %.3f ms (%.3f us per target)\n", t*1e-6, t*1e-3 / NDST);
+        printf("\x1b[94msolved in %.2f ms\x1b[0m\n", potT * 1e-6);
+
 
     return hpx::finalize();
 }
