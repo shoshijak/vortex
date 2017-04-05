@@ -9,7 +9,10 @@ void evaluate(const Node* nodes, const double* expansions, const double *xdata, 
 
 void potential(double theta, double *xsrc, double *ysrc, double *sources, int NSRC,
     double *xdst, double *ydst, int NDST, double *xtargets,
-               double const& extT, double const& mrtT, double const& srtT,
-               double const& reoT, double const& bldT, double const& evaT);
+               double& extT, double& mrtT, double& srtT,
+               double& reoT, double& bldT, double& evaT,
+               int& nnodes);
 
-void test(double theta, double tol, FILE * f = NULL, bool verify = true, const double &extT, const double &mrtT, const double &srtT, const double &reoT, const double &bldT, const double &evaT, const double &potT);
+void test(double &extT, double &mrtT, double &srtT, double &reoT, double &bldT, double &evaT, double &potT, int& n, int& nnodes, int& NDST, double theta, double tol, FILE * f = NULL, bool verify = true);
+
+void run_test(double &extT, double &mrtT, double &srtT, double &reoT, double &bldT, double &evaT, double &potT, int& n, int& nnodes, int& NDST, double theta, double tol, bool verify = true, size_t const numtest = 1, bool printeach = false);

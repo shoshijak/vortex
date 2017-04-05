@@ -117,9 +117,10 @@ void evaluate(const Node* nodes, const double* expansions, const double *xdata, 
 void potential(double theta,
 	       double *xsrc, double *ysrc,
 	       double *sources, int NSRC,
-	       double *xdst, double *ydst, int NDST, double *xtargets
-	       double const& extT, double const& mrtT, double const& srtT,
-	       double const& reoT, double const& bldT, double const& evaT)
+	       double *xdst, double *ydst, int NDST, double *xtargets,
+	       double& extT, double& mrtT, double& srtT,
+	       double& reoT, double& bldT, double& evaT,
+	       int& nnodes)
 {
 	double *x, *y, *m, *xsorted, *ysorted, *msorted;
 	double *expansions;
@@ -136,11 +137,12 @@ void potential(double theta,
 	int k = 32*1;	// leaf capacity
 	int maxnodes = (n + k - 1) / k * 60;
     Node* nodes;
+
 	posix_memalign((void **)&nodes, 32, sizeof(Node) * maxnodes);
 	posix_memalign((void **)&expansions, 32, sizeof(double) * 2 * ORDER * maxnodes);
 
 	build(x, y, m, n, k, xsorted, ysorted, msorted, nodes, expansions,
-	      extT, mrtT, srtT, reoT, bldT);
+	      extT, mrtT, srtT, reoT, bldT, nnodes);
 
 	double thetasquared = theta*theta;
 
@@ -158,13 +160,13 @@ void potential(double theta,
 	hpx::parallel::for_loop(
 		hpx::parallel::execution::par, 0, NDST,
 		[&](int i)
-#endif
 	{
 		evaluate(nodes, expansions, xsorted, ysorted, msorted,	
 			 thetasquared, xtargets + i, xdst[i], ydst[i]);
 	});
+#endif
 
-	double evaT = tm.elapsed();
+	evaT = 1e-6*tm.elapsed();
 
 	free(xsorted);
 	free(ysorted);
@@ -173,12 +175,11 @@ void potential(double theta,
 	free(expansions);
 }
 
-void test(double theta, double tol, FILE * f, bool verify,
-	  double const& extT, double const& mrtT, double const& srtT,
-	  double const& reoT, double const& bldT, double const& evaT,
-	  double const& potT)
+void test(double& extT, double& mrtT, double& srtT,
+	  double& reoT, double& bldT, double& evaT,
+	  double& potT, int& NSRC, int& nnodes, int& NDST,
+	  double theta, double tol, FILE * f, bool verify)
 {
-	int NSRC;
 	fread(&NSRC, sizeof(int), 1, f);
 
 	double *xsrc, *ysrc, *sources;
@@ -190,7 +191,6 @@ void test(double theta, double tol, FILE * f, bool verify,
 	fread(ysrc, sizeof(double), NSRC, f);
 	fread(sources, sizeof(double), NSRC, f);
 
-	int NDST;
 	fread(&NDST, sizeof(int), 1, f);
 
 	double *xdst, *ydst, *xref, *yref;
@@ -214,8 +214,9 @@ void test(double theta, double tol, FILE * f, bool verify,
 	Timer tm;
 	tm.start();
 	potential(theta, xsrc, ysrc, sources, NSRC,
-		  xdst, ydst, NDST, xtargets);
-	potT = tm.elapsed();
+		  xdst, ydst, NDST, xtargets,
+		  extT, mrtT, srtT, reoT, bldT, evaT, nnodes);
+	potT = 1e-6*tm.elapsed();
 
 	if (verify)
 	{
@@ -288,4 +289,65 @@ void test(double theta, double tol, FILE * f, bool verify,
 	free(sources);
 
 	printf("TEST PASSED.\n");
+}
+
+void run_test(double &extT, double &mrtT, double &srtT, double &reoT, double &bldT, double &evaT, double &potT, int& n, int& nnodes, int& NDST, double theta, double tol, bool verify, size_t const numtest, bool printeach)
+{
+
+  double extTT(0), mrtTT(0), srtTT(0), reoTT(0), bldTT(0), evaTT(0), potTT(0);
+
+  for(size_t i(0); i<numtest; i++){
+
+      char filename[256];
+          strcpy(filename, "../../test-data/dN400");
+
+          if (access(filename, R_OK) == -1)
+          {
+                  printf("WARNING: reference file <%s> not found.\n", filename);
+                  return;
+          }
+          else
+                  printf("reading from <%s> ...\n", filename);
+
+          FILE * fin = fopen(filename, "r");
+
+          assert(fin && sizeof(double) == sizeof(double));
+
+
+      extT, mrtT, srtT = 0;reoT = 0; bldT = 0; evaT = 0; potT = 0;
+      test(extT, mrtT, srtT, reoT, bldT, evaT, potT, n, nnodes, NDST,
+           theta, tol, fin, verify);
+      if(printeach){
+          printf("TIME for N = %d (%d nodes)  is  %6.2f ms\n", n, nnodes,
+             extT+mrtT+srtT+reoT+bldT);
+          printf("\textent: %6.2f ms\n\tmorton: %6.2f ms\n\tsorting: %6.2f ms\n\treordering: %6.2f ms\n\tbuilding: %6.2f ms\n",
+                  extT, mrtT, srtT, reoT, bldT);
+          printf("Evaluation took %.3f ms (%.3f us per target)\n",
+             evaT, evaT*1e3 / NDST);
+          printf("\x1b[94msolved in %.2f ms\x1b[0m\n", potT);
+      }
+
+      fclose(fin);
+
+      extTT+=extT;
+      mrtTT+=mrtT;
+      srtTT+=srtT;
+      reoTT+=reoT;
+      bldTT+=bldT;
+      evaTT+=evaT;
+      potTT+=potT;
+    }
+
+      extTT/=numtest; mrtTT/=numtest; srtTT/=numtest;
+      reoTT/=numtest; bldTT/=numtest; evaTT/=numtest;
+      potTT/=numtest;
+
+      printf("AVERAGE TIME for %d runs and for N = %d (%d nodes)  is  %6.2f ms\n", numtests, n, nnodes,
+         extTT+mrtTT+srtTT+reoTT+bldTT);
+      printf("\textent: %6.2f ms\n\tmorton: %6.2f ms\n\tsorting: %6.2f ms\n\treordering: %6.2f ms\n\tbuilding: %6.2f ms\n",
+              extTT, mrtTT, srtTT, reoTT, bldTT);
+      printf("Evaluation took %.3f ms (%.3f us per target)\n",
+         evaTT, evaTT*1e+3 / NDST);
+      printf("\x1b[94msolved in %.2f ms\x1b[0m\n", potTT);
+
 }

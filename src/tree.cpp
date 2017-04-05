@@ -95,8 +95,8 @@ void TreeBuilder::build_tree(const int nodeid)
 void build(const double* const x, const double*const y, const double* mass, const int n, const int k,
 	double* xsorted, double* ysorted, double* mass_sorted,
 	   Node *nodes, double *expansions,
-	   double const& exTm, double const& morTm, double const& sorTm,
-	   double const& reoTm, double const& bldTm)
+	   double& exTm, double& morTm, double& sorTm,
+	   double& reoTm, double& bldTm, int& nnodes)
 {
 	Timer tm;
 	int *index, *keys;
@@ -138,7 +138,8 @@ void build(const double* const x, const double*const y, const double* mass, cons
 		nodes[0].setup(0, n, 0, 0); // shouldn't we take thisout of the parallel region?
 		builder->build_tree(0);
 	}
-	bldTm = 1e-6 * tm.elapsed();
+	bldTm = 1e-6 * tm.elapsedAndReset();
+	nnodes = builder->currnnodes;
 
 	free(index);
 	free(keys);
