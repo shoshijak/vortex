@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cmath>
 #include <limits>
+#include <iostream>
 
 #include "tree.h"
 #include "kernels.h"
@@ -103,11 +104,11 @@ void build(const double* const x, const double*const y, const double* mass, cons
 	posix_memalign((void **)&index, 32, sizeof(int) * n);
 	posix_memalign((void **)&keys,  32, sizeof(int) * n);
 
-#ifdef RUN_WITH_OMP
-	#pragma omp parallel for
-#endif
-	for (int i=0; i<n; i++)
-		keys[i] = i;
+//#ifdef RUN_WITH_OMP
+//	#pragma omp parallel for
+//#endif
+//for (int i=0; i<n; i++)
+//		keys[i] = i;
 
 	tm.start();
 	extent(n, x, y, xmin, ymin, ext);

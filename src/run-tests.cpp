@@ -302,7 +302,7 @@ void run_test(double &extT, double &mrtT, double &srtT, double &reoT, double &bl
   for(size_t i(0); i<numtest; i++){
 
       char filename[256];
-      strcpy(filename, "../../test-data/dN400");
+      strcpy(filename, "/home/shoshijak/Documents/CSCS/learning/vortex/v-hpx/test-data/dN400");
 
       if (access(filename, R_OK) == -1)
         {
@@ -336,7 +336,7 @@ void run_test(double &extT, double &mrtT, double &srtT, double &reoT, double &bl
       bldTT+=bldT; evaTT+=evaT; potTT+=potT;
 
 #ifdef RUN_WITH_OMP
-      // Do I need some kind of barrier?
+  #pragma omp barrier
 #else
       hpx::lcos::barrier::get_global_barrier().synchronize();
 #endif

@@ -12,11 +12,14 @@
 #include <hpx/parallel/algorithms/minmax.hpp>
 #include <hpx/include/parallel_for_loop.hpp>
 #include <hpx/parallel/algorithms/sort.hpp>
+#include <hpx/parallel/executor_parameters.hpp>
 #endif
 
 #include <cmath>
 
 #define LMAX 15
+
+const double EPS = 10000 * std::numeric_limits<double>::epsilon() ;
 
 void minmax_vec(const double xsrc[], const double ysrc[], const int nsources, double xmin_xmax_ymin_ymax[])
 {
@@ -60,18 +63,16 @@ void minmax_vec(const double xsrc[], const double ysrc[], const int nsources, do
 void extent(const int N, const double* const x, const double* const y,
 			double& xmin, double& ymin, double& ext)
 {
-	double ext0, ext1;
-	static const int chunksize = 1024 * 4;
+#ifdef RUN_WITH_OMP
+
+        static const int chunksize = 1024 * 4;
 	
 	{
 		const int nthreads = omp_get_max_threads();
 
 		double xpartials[2][nthreads], ypartials[2][nthreads];
 
-// TODO revisit the structure of this
-#ifdef RUN_WITH_OMP
 #pragma omp parallel
-#endif
 		{
 			const int tid = omp_get_thread_num();
 
@@ -101,15 +102,35 @@ void extent(const int N, const double* const x, const double* const y,
 		xmin = *std::min_element(xpartials[0], xpartials[0] + nthreads);
 		ymin = *std::min_element(ypartials[0], ypartials[0] + nthreads);
 
-		ext0 = (*std::max_element(xpartials[1], xpartials[1] + nthreads) - xmin);
-		ext1 = (*std::max_element(ypartials[1], ypartials[1] + nthreads) - ymin);
+                double ext0 = (*std::max_element(xpartials[1], xpartials[1] + nthreads) - xmin);
+                double ext1 = (*std::max_element(ypartials[1], ypartials[1] + nthreads) - ymin);
 	}
+#else
+         hpx::parallel::static_chunk_size param;
+         hpx::parallel::execution::parallel_task_policy par_policy;
+         auto policy = par_policy.with(param);
+
+                auto minmaxX_ = hpx::parallel::minmax_element(
+                            policy,
+                            x,
+                            x+N);
+                auto minmaxY_ = hpx::parallel::minmax_element(
+                            policy,
+                            y,
+                            y+N);
+
+                auto minmaxX = minmaxX_.get();
+                auto minmaxY = minmaxY_.get();
+                xmin = *minmaxX.first;
+                ymin = *minmaxY.first;
+                double ext0 = *minmaxX.second - xmin;
+                double ext1 = *minmaxY.second - ymin;
+#endif
 
 	// For numerical reasons, shift the domain boundaries out by epsilon
-	const double eps = 10000 * std::numeric_limits<double>::epsilon();
-	ext = std::max(ext0, ext1) * (1 + 2 * eps);
-	xmin -= eps * ext;
-	ymin -= eps * ext;
+        ext = fmax(ext0, ext1) * (1 + 2 * EPS);
+        xmin -= EPS * ext;
+        ymin -= EPS * ext;
 }
 
 void morton(const int N, const double* const x, const double* const y,
@@ -136,16 +157,18 @@ void morton(const int N, const double* const x, const double* const y,
 		index[i] = xid | (yid << 1);
 	}
 #else
+    hpx::parallel::static_chunk_size param;
+    auto policy = hpx::parallel::execution::par.with(param);
+
     hpx::parallel::for_loop(hpx::parallel::execution::par, 0, N,
                        [&](int i){
             int xid = floor((x[i] - xmin) / ext * (1 << LMAX));
-            int yid = floor((y[i] - ymin) / ext * (1 << LMAX));
-
             xid = (xid | (xid << 8)) & 0x00FF00FF;
             xid = (xid | (xid << 4)) & 0x0F0F0F0F;
             xid = (xid | (xid << 2)) & 0x33333333;
             xid = (xid | (xid << 1)) & 0x55555555;
 
+            int yid = floor((y[i] - ymin) / ext * (1 << LMAX));
             yid = (yid | (yid << 8)) & 0x00FF00FF;
             yid = (yid | (yid << 4)) & 0x0F0F0F0F;
             yid = (yid | (yid << 2)) & 0x33333333;
@@ -166,14 +189,16 @@ void sort(const int N, int* index, int* keys)
 	for(int i = 0; i < N; ++i)
 	{
 		kv[i].first = index[i];
-		kv[i].second = keys[i];
+                kv[i].second = i;
 	}
 #else
-        hpx::parallel::for_loop(hpx::parallel::execution::par, 0, N,
+        hpx::parallel::static_chunk_size param;
+        auto policy = hpx::parallel::execution::par.with(param);
+        hpx::parallel::for_loop(policy, 0, N,
                                 [&](int i)
         {
                 kv[i].first = index[i];
-                kv[i].second = keys[i];
+                kv[i].second = i;
         }
                                 );
 #endif
@@ -185,7 +210,7 @@ void sort(const int N, int* index, int* keys)
 #endif
 #else
         hpx::parallel::sort(
-                    hpx::parallel::execution::par,
+                    policy,
                     kv, kv+N);
 #endif
 
@@ -197,7 +222,7 @@ void sort(const int N, int* index, int* keys)
 		keys[i] = kv[i].second;
 	}
 #else
-        hpx::parallel::for_loop(hpx::parallel::execution::par,
+        hpx::parallel::for_loop(policy,
                                 0, N, [&](int i)
         {
                 index[i] = kv[i].first;
@@ -222,11 +247,12 @@ void reorder(const int N, const int* const keys, const double* const x, const do
 		msorted[i] = m[entry];
 	}
 #else
-    hpx::parallel::for_loop(hpx::parallel::execution::par,
+    hpx::parallel::static_chunk_size param;
+    auto policy = hpx::parallel::execution::par.with(param);
+    hpx::parallel::for_loop(policy,
                             0, N, [&](int i)
     {
             const int entry = keys[i];
-
             xsorted[i] = x[entry];
             ysorted[i] = y[entry];
             msorted[i] = m[entry];
