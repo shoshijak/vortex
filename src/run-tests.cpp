@@ -10,7 +10,10 @@
 #include <limits>
 #include <vector>
 
+#ifndef RUN_WITH_OMP
 #include <hpx/include/parallel_for_loop.hpp>
+#include <hpx/lcos/barrier.hpp>
+#endif
 
 #include "timer.h"
 #include "tree.h"
@@ -136,7 +139,7 @@ void potential(double theta,
 
 	int k = 32*1;	// leaf capacity
 	int maxnodes = (n + k - 1) / k * 60;
-    Node* nodes;
+	Node* nodes;
 
 	posix_memalign((void **)&nodes, 32, sizeof(Node) * maxnodes);
 	posix_memalign((void **)&expansions, 32, sizeof(double) * 2 * ORDER * maxnodes);
@@ -299,19 +302,19 @@ void run_test(double &extT, double &mrtT, double &srtT, double &reoT, double &bl
   for(size_t i(0); i<numtest; i++){
 
       char filename[256];
-          strcpy(filename, "../../test-data/dN400");
+      strcpy(filename, "../../test-data/dN400");
 
-          if (access(filename, R_OK) == -1)
-          {
-                  printf("WARNING: reference file <%s> not found.\n", filename);
-                  return;
-          }
-          else
-                  printf("reading from <%s> ...\n", filename);
+      if (access(filename, R_OK) == -1)
+        {
+          printf("WARNING: reference file <%s> not found.\n", filename);
+          return;
+        }
+      else
+        printf("reading from <%s> ...\n", filename);
 
-          FILE * fin = fopen(filename, "r");
+      FILE * fin = fopen(filename, "r");
 
-          assert(fin && sizeof(double) == sizeof(double));
+      assert(fin && sizeof(double) == sizeof(double));
 
 
       extT, mrtT, srtT = 0;reoT = 0; bldT = 0; evaT = 0; potT = 0;
@@ -319,30 +322,38 @@ void run_test(double &extT, double &mrtT, double &srtT, double &reoT, double &bl
            theta, tol, fin, verify);
       if(printeach){
           printf("TIME for N = %d (%d nodes)  is  %6.2f ms\n", n, nnodes,
-             extT+mrtT+srtT+reoT+bldT);
+                 extT+mrtT+srtT+reoT+bldT);
           printf("\textent: %6.2f ms\n\tmorton: %6.2f ms\n\tsorting: %6.2f ms\n\treordering: %6.2f ms\n\tbuilding: %6.2f ms\n",
-                  extT, mrtT, srtT, reoT, bldT);
+                 extT, mrtT, srtT, reoT, bldT);
           printf("Evaluation took %.3f ms (%.3f us per target)\n",
-             evaT, evaT*1e3 / NDST);
+                 evaT, evaT*1e3 / NDST);
           printf("\x1b[94msolved in %.2f ms\x1b[0m\n", potT);
-      }
+        }
 
       fclose(fin);
 
-      extTT+=extT;
-      mrtTT+=mrtT;
-      srtTT+=srtT;
-      reoTT+=reoT;
-      bldTT+=bldT;
-      evaTT+=evaT;
-      potTT+=potT;
+      extTT+=extT; mrtTT+=mrtT; srtTT+=srtT; reoTT+=reoT;
+      bldTT+=bldT; evaTT+=evaT; potTT+=potT;
+
+#ifdef RUN_WITH_OMP
+      // Do I need some kind of barrier?
+#else
+      hpx::lcos::barrier::get_global_barrier().synchronize();
+#endif
+
     }
 
-      extTT/=numtest; mrtTT/=numtest; srtTT/=numtest;
-      reoTT/=numtest; bldTT/=numtest; evaTT/=numtest;
-      potTT/=numtest;
+  extTT/=numtest; mrtTT/=numtest; srtTT/=numtest;
+  reoTT/=numtest; bldTT/=numtest; evaTT/=numtest;
+  potTT/=numtest;
 
-      printf("AVERAGE TIME for %d runs and for N = %d (%d nodes)  is  %6.2f ms\n", numtests, n, nnodes,
+#ifdef RUN_WITH_OMP
+      printf("Running with OpenMP");
+#else
+      printf("Running with HPX\n");
+#endif
+
+      printf("AVERAGE TIME for %d runs and for N = %d (%d nodes)  is  %6.2f ms\n", numtest, n, nnodes,
          extTT+mrtTT+srtTT+reoTT+bldTT);
       printf("\textent: %6.2f ms\n\tmorton: %6.2f ms\n\tsorting: %6.2f ms\n\treordering: %6.2f ms\n\tbuilding: %6.2f ms\n",
               extTT, mrtTT, srtTT, reoTT, bldTT);

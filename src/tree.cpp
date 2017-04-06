@@ -1,15 +1,13 @@
 #include <cstdio>
 #include <cstdlib>
-#include "tree_prepare.h"
-#include "timer.h"
-
 #include <cassert>
 #include <cmath>
-
 #include <limits>
 
 #include "tree.h"
 #include "kernels.h"
+#include "tree_prepare.h"
+#include "timer.h"
 
 #include <omp.h>
 
@@ -105,8 +103,9 @@ void build(const double* const x, const double*const y, const double* mass, cons
 	posix_memalign((void **)&index, 32, sizeof(int) * n);
 	posix_memalign((void **)&keys,  32, sizeof(int) * n);
 
-// TODO I should probably parallelize this with a large chunking policy
-//	#pragma omp parallel for
+#ifdef RUN_WITH_OMP
+	#pragma omp parallel for
+#endif
 	for (int i=0; i<n; i++)
 		keys[i] = i;
 

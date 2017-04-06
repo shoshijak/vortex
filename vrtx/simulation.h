@@ -1,4 +1,8 @@
 #include "tree.h"
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+
 
 #define LMAX 15
 

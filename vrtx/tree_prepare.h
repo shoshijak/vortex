@@ -8,9 +8,11 @@
 #include <algorithm>
 #endif
 
+#ifndef RUN_WITH_OMP
 #include <hpx/parallel/algorithms/minmax.hpp>
 #include <hpx/include/parallel_for_loop.hpp>
 #include <hpx/parallel/algorithms/sort.hpp>
+#endif
 
 #include <cmath>
 
@@ -46,11 +48,13 @@ void minmax_vec(const double xsrc[], const double ysrc[], const int nsources, do
                     hpx::parallel::execution::par,
                     ysrc,
                     ysrc+nsources);
-#endif
+
         xmin_xmax_ymin_ymax[0] = *minmaxX.first;
         xmin_xmax_ymin_ymax[1] = *minmaxX.second;
         xmin_xmax_ymin_ymax[2] = *minmaxY.first;
         xmin_xmax_ymin_ymax[3] = *minmaxY.second;
+#endif
+
 }
 
 void extent(const int N, const double* const x, const double* const y,
@@ -65,7 +69,9 @@ void extent(const int N, const double* const x, const double* const y,
 		double xpartials[2][nthreads], ypartials[2][nthreads];
 
 // TODO revisit the structure of this
-//		#pragma omp parallel
+#ifdef RUN_WITH_OMP
+#pragma omp parallel
+#endif
 		{
 			const int tid = omp_get_thread_num();
 

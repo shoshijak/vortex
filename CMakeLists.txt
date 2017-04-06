@@ -4,11 +4,20 @@ project(Vortex-HPX CXX)
 set(CXX g++-5) # Use g++ version 5 (required to use openMP)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -g -fopenmp -march=native -mtune=native -D ORDER=12 -MP -MD")
 
+# option to run the program with OpenMP rather than HPX
+option(VORTEX_WITH_OPENMP "Use OpenMP for multithreading" OFF)
+
+if(VORTEX_WITH_OPENMP)
+  add_definitions(-DRUN_WITH_OMP)
+endif()
+
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY bin/)
 
 include_directories(vrtx)
 
+if(NOT VORTEX_WITH_OPENMP)
 find_package(HPX)
+endif()
 
 # build all of this with
 # cmake -DHWLOC_ROOT=/usr/local/include/hwloc
@@ -33,32 +42,29 @@ set(HEADER_FILES
 )
 
 #####################################
-# regular non-hpx program						#
+# regular non-hpx program
 #####################################
 
-#set (m4_cmd "/usr/bin/m4 ")
-#set (m4_arg "-D ORDER=12 ")
-#set (m4_inp "src/kernels.m4")
-#set (m4_out "src/kernels.cpp")
-#message("Unrolling with M4... ")
-#execute_process(
-#	COMMAND ${m4_cmd} ${m4_cmd}
-#	INPUT_FILE ${m4_inp}
-#	OUTPUT_FILE ${m4_out}
-#)
-#message("Generated ${m4_out} from ${m4_inp}")
-#message("Creating executable... ")
-#add_executable(vortex src/main.cpp src/kernels.cpp src/tree.cpp)
+if(VORTEX_WITH_OPENMP)
+message("building VORTEX with OPENMP")
+add_executable(vortex src/omp-main.cpp
+    src/kernels.cpp
+    src/run-tests.cpp
+    src/tree.cpp)
+endif()
 
 #####################################
 # hpx program												#
 #####################################
 
+if(NOT VORTEX_WITH_OPENMP)
+message("building VORTEX with HPX")
 add_hpx_executable(hpx-vortex
   ESSENTIAL
   SOURCES src/hpx-main.cpp
-        src/kernels.cpp
-					src/run-tests.cpp
-					src/tree.cpp
+    src/kernels.cpp
+    src/run-tests.cpp
+    src/tree.cpp
   COMPONENT_DEPENDENCIES iostreams
 )
+endif()
