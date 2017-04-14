@@ -7,8 +7,9 @@
  *
  */
 
-
+#ifdef RUN_WITH_OMP
 #pragma once
+#endif
 
 void p2e(
 	const  double xsources[],

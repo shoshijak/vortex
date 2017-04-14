@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-
-
+#include <iostream>
 
 
 #define EPS (10 * __DBL_EPSILON__)
@@ -19,7 +18,8 @@ void p2e(
   double *__restrict rexpansions,
   double *__restrict iexpansions  )
 {
-	double 
+    std::cout << "--p2e start--" << std::endl;
+    double
 		rxp_0 = 0, ixp_0 = 0,
 		rxp_1 = 0, ixp_1 = 0,
 		rxp_2 = 0, ixp_2 = 0,
@@ -265,7 +265,10 @@ void p2e(
         
         rexpansions[11] = rsum_11;
         iexpansions[11] = isum_11;
-        
+
+    std::cout << "--p2e end--" << std::endl;
+
+        return;
 }
 
 double e2p(

@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cassert>
 #include <cstring>
+#include <iostream>
 
 #include <algorithm>
 #include <limits>
@@ -12,6 +13,7 @@
 
 #ifndef RUN_WITH_OMP
 #include <hpx/include/parallel_for_loop.hpp>
+#include <hpx/include/lcos.hpp>
 #include <hpx/lcos/barrier.hpp>
 #endif
 
@@ -138,16 +140,37 @@ void potential(double theta,
 	posix_memalign((void **)&msorted, 32, sizeof(double) * n);
 
 	int k = 32*1;	// leaf capacity
-	int maxnodes = (n + k - 1) / k * 60;
+	int maxnodes = (n + k - 1) / k * 6;
+	double thetasquared = theta*theta;
 	Node* nodes;
 
 	posix_memalign((void **)&nodes, 32, sizeof(Node) * maxnodes);
 	posix_memalign((void **)&expansions, 32, sizeof(double) * 2 * ORDER * maxnodes);
 
-	build(x, y, m, n, k, xsorted, ysorted, msorted, nodes, expansions,
-	      extT, mrtT, srtT, reoT, bldT, nnodes);
+	std::cout << "[run-tests.cpp] Start building tree: " << std::endl;
 
-	double thetasquared = theta*theta;
+#ifdef RUN_WITH_OMP
+    build(
+            x, y, m, n, k,
+            xsorted, ysorted, msorted,
+            nodes, expansions,
+            extT, mrtT, srtT, reoT, bldT,
+            nnodes);
+#else
+	hpx::future<void> done_building_tree = build(
+	      x, y, m, n, k,
+	      xsorted, ysorted, msorted,
+	      nodes, expansions,
+	      extT, mrtT, srtT, reoT, bldT,
+	      nnodes);
+	std::cout << "[run-tests.cpp] Building tree returned. waiting... : " << std::endl;
+	done_building_tree.wait();
+	    //! wait for the tree building to be done
+	    //! before I start solving
+	    //! (blocking)
+#endif
+
+	std::cout << "[run-tests.cpp] Building tree DONE " << std::endl;
 
 	Timer tm;
 	tm.start();
@@ -160,6 +183,7 @@ void potential(double theta,
 				  thetasquared, xtargets + i, xdst[i], ydst[i]);
 	  }
 #else
+    std::cout << "Starting evaluation : " << std::endl;
 	hpx::parallel::for_loop(
 		hpx::parallel::execution::par, 0, NDST,
 		[&](int i)

@@ -13,11 +13,12 @@
 #include <hpx/include/parallel_for_loop.hpp>
 #include <hpx/parallel/algorithms/sort.hpp>
 #include <hpx/parallel/executor_parameters.hpp>
+#include <hpx/include/lcos.hpp>
 #endif
 
 #include <cmath>
 
-#define LMAX 15
+#define LMAX 15 // probs could do much smaller - also defined in simulation.h
 
 const double EPS = 10000 * std::numeric_limits<double>::epsilon() ;
 
@@ -66,6 +67,7 @@ void extent(const int N, const double* const x, const double* const y,
 #ifdef RUN_WITH_OMP
 
         static const int chunksize = 1024 * 4;
+        double ext0, ext1;
 	
 	{
 		const int nthreads = omp_get_max_threads();
@@ -102,8 +104,8 @@ void extent(const int N, const double* const x, const double* const y,
 		xmin = *std::min_element(xpartials[0], xpartials[0] + nthreads);
 		ymin = *std::min_element(ypartials[0], ypartials[0] + nthreads);
 
-                double ext0 = (*std::max_element(xpartials[1], xpartials[1] + nthreads) - xmin);
-                double ext1 = (*std::max_element(ypartials[1], ypartials[1] + nthreads) - ymin);
+        ext0 = (*std::max_element(xpartials[1], xpartials[1] + nthreads) - xmin);
+        ext1 = (*std::max_element(ypartials[1], ypartials[1] + nthreads) - ymin);
 	}
 #else
          hpx::parallel::static_chunk_size param;
@@ -260,39 +262,54 @@ void reorder(const int N, const int* const keys, const double* const x, const do
 #endif
 }
 
+/* Setup the node parameters in Treebuilder::build_tree
+ * in       xsources[]
+ *          ysources[]
+ *          msources[]
+ *          nsources
+ * out      mass
+ *          xcom
+ *          ycom
+ *          radius
+ */
 inline void node_setup(const double xsources[], const double ysources[], const double msources[], const int nsources,
-		double& mass, double& xcom, double& ycom, double& radius)
+                double& mass, double& xcom, double& ycom, double& radius)
 {
-	mass = 0;
-	double weight = 0, xsum = 0, ysum = 0;
+    std::cout << "--node setup start--" << std::endl;
 
-	for(int i = 0; i < nsources; ++i)
-	{
-		const double x = xsources[i];
-		const double y = ysources[i];
-		const double m = msources[i];
-		const double w = fabs(m);
+        mass = 0;
+        double weight = 0, xsum = 0, ysum = 0;
 
-		mass += m;
-		weight += w;
-		xsum += x * w;
-		ysum += y * w;
-	}
+        for(int i = 0; i < nsources; ++i)
+        {
+                const double x = xsources[i];
+                const double y = ysources[i];
+                const double m = msources[i];
+                const double w = fabs(m);
 
-	xcom = weight ? xsum / weight : 0;
-	ycom = weight ? ysum / weight : 0;
+                mass += m;
+                weight += w;
+                xsum += x * w;
+                ysum += y * w;
+        }
 
-	double r2 = 0;
-	for(int i = 0; i < nsources; ++i)
-	{
-		const double xr = xsources[i] - xcom;
-		const double yr = ysources[i] - ycom;
+        xcom = weight ? xsum / weight : 0;
+        ycom = weight ? ysum / weight : 0;
 
-		r2 = fmax(r2, xr * xr + yr * yr);
-	}
+        double r2 = 0;
+        for(int i = 0; i < nsources; ++i)
+        {
+                const double xr = xsources[i] - xcom;
+                const double yr = ysources[i] - ycom;
 
-	radius = sqrt(r2);
+                r2 = fmax(r2, xr * xr + yr * yr);
+        }
+
+        radius = sqrt(r2);
+
+        std::cout << "--node setup end--" << std::endl;
 }
+
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
@@ -313,7 +330,7 @@ int lower_bound_vec(int s, int e, const int val, const int keys[])
 
 		const double h = (e - s) * 1.f / 8;
 
-		for(int programIndex = 0; programIndex < 8; ++programIndex)
+                for (int programIndex = 0; programIndex < 8; ++programIndex)
 		{
 			//int candidate_s = s0, candidate_e = e0;
 			const int i = MIN(e0 - 1, (int)(s0 + programIndex * h + 0.499999f));
