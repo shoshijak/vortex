@@ -155,19 +155,25 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid)
               << " l : " << l    << std::endl << " m : " << mId  << std::endl  << " ? : " << leaf << std::endl;
 
 	hpx::future<void> setup = hpx::async(
-	      [&,node](){
+	      [&,node,s,e,l,mId,leaf](){
+        std::cout << "--before nodesetup--" << std::endl
+                        << "x " << xdata+s << ", n " << e-s
+                        << ", m " << node->mass << ", xc " << node->xcom << ", r " << node->r << std::endl;
 	    node_setup(xdata + s, ydata + s, mdata + s, e - s,
 		       node->mass, node->xcom, node->ycom, node->r);
+        std::cout << "--after nodesetup--" << std::endl
+                  << "x " << xdata+s << ", n " << e-s
+                  << ", m " << node->mass << ", xc " << node->xcom << ", r " << node->r << std::endl;
 	  });
 
 	hpx::future<void> p2e_fut = setup.then(
-            [&,node](hpx::future<void> fv)
+            [&,node,nodeid,s,e](hpx::future<void> fv)
             {
 	            p2e(xdata + s, ydata + s, mdata + s, e - s,
                     node->xcom, node->ycom,
                     expansions + 2*nodeid*ORDER,
                     expansions + 2*nodeid*ORDER + ORDER);
-                std::cout << "Here after p2e" << std::endl;
+                std::cout << "--after p2e--" << std::endl;
 	  });
 
 	if (leaf) {
@@ -180,8 +186,7 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid)
 //	      What I want:
 //	      1. return a future<void> that is ready when p2e_fut is ready
 //	      2. non blocking
-//            p2e_fut.get();
-//	    return hpx::make_ready_future();
+//	    p2e_fut.get() ; return hpx::make_ready_future();
         return p2e_fut;
 	}
 
@@ -221,7 +226,6 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid)
                 std::move(hpx::async(
                         [&,chId]()->hpx::future<void>
                         {
-                            std::cout << "recursive call: child id = " << chId << "\n";
                             return build_tree_hpx(chId);
                         })));
     }
@@ -230,9 +234,8 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid)
 
     //! (Asynchronously) wait for all the futures in the vector of futures
     //hpx::when_all(exp_and_child_fut).get();
-    //return std::move(exp_and_child_fut[0]);
-    return std::move(hpx::when_all(exp_and_child_fut)); //! this would be the "correct" thing to do. Just trying the other one for debugging
     //return hpx::make_ready_future();
+    return hpx::when_all(exp_and_child_fut); //! this would be the "correct" thing to do. Just trying the other one for debugging
 }
 #endif
 
