@@ -15,13 +15,13 @@ int hpx_main()
 
   double extT, mrtT, srtT, reoT, bldT, evaT, potT;
   int n, nnodes, NDST;
-  int numtests = 1;
+  int numtests = 3;
   bool printeach = false;
 
   run_test(extT, mrtT, srtT, reoT, bldT, evaT, potT,
            n, nnodes, NDST, theta, tol_, verify,
            numtests, printeach);
-
+std::cout << "hello11"<<std::endl;
   return hpx::finalize();
 
 }

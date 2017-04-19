@@ -15,6 +15,8 @@
 #include <hpx/include/parallel_for_loop.hpp>
 #include <hpx/include/lcos.hpp>
 #include <hpx/lcos/barrier.hpp>
+#include <hpx/util/annotated_function.hpp>
+
 #endif
 
 #include "timer.h"
@@ -54,7 +56,12 @@ void check(const double * ref, const double * res, const int N)
 	printf("       l-1 errors: %.03e (absolute) %.03e (relative)\n", l1, l1_rel);
 }
 
-
+// in   nodes
+//      expansions
+//      xdata, ydata, mdata
+//      thetasquared
+//      xt, yt
+// out  result
 void evaluate(const Node* nodes, const double* expansions, const double *xdata, const double *ydata, const double *mdata,
 		const double thetasquared, double * const result, const double xt, const double yt)
 {
@@ -127,12 +134,12 @@ void potential(double theta,
 	       double& reoT, double& bldT, double& evaT,
 	       int& nnodes)
 {
-	double *x, *y, *m, *xsorted, *ysorted, *msorted;
+	double /**x, *y, *m,*/ *xsorted, *ysorted, *msorted;
 	double *expansions;
 
-	x = xsrc;
+/*	x = xsrc;
 	y = ysrc;
-	m = sources;
+	m = sources;*/
 	int n = NSRC;
 
 	posix_memalign((void **)&xsorted, 32, sizeof(double) * n);
@@ -160,23 +167,23 @@ void potential(double theta,
             nnodes);
 #else
 	hpx::future<void> done_building_tree = build(
-	      x, y, m, n, k,
+	      xsrc, ysrc, sources, n, k,
 	      xsorted, ysorted, msorted,
 	      nodes, expansions,
 	      extT, mrtT, srtT, reoT, bldT,
 	      nnodes);
 
-#ifdef PRINT
+//#ifdef PRINT
 	std::cout << "[run-tests.cpp] Building tree returned. waiting... : " << std::endl;
-#endif
+//#endif
 
 	done_building_tree.wait();
 	    //! wait for the tree building to be done before solving (blocking)
 #endif
 
-#ifdef PRINT
+//#ifdef PRINT
 	std::cout << "[run-tests.cpp] Building tree DONE " << std::endl;
-#endif
+//#endif
 
 	Timer tm;
 	tm.start();
@@ -189,23 +196,24 @@ void potential(double theta,
 				  thetasquared, xtargets + i, xdst[i], ydst[i]);
 	  }
 #else
-    std::cout << "Starting evaluation : " << std::endl;
-	hpx::parallel::for_loop(
-		hpx::parallel::execution::par, 0, NDST,
-		[&](int i)
-	{
-		evaluate(nodes, expansions, xsorted, ysorted, msorted,	
-			 thetasquared, xtargets + i, xdst[i], ydst[i]);
-	});
+    std::cout << "Starting evaluation of " << NDST << " targets : " << std::endl;
+        hpx::parallel::for_loop(
+                hpx::parallel::execution::seq, 0, NDST,
+                [&](int i) {
+                    evaluate(nodes, expansions, xsorted, ysorted, msorted,
+                             thetasquared, xtargets + i, xdst[i], ydst[i]);
+                });
 #endif
 
 	evaT = 1e-6*tm.elapsed();
-
+std::cout << "hello" << std::endl;
 	free(xsorted);
 	free(ysorted);
 	free(msorted);
 	free(nodes);
 	free(expansions);
+std::cout << "hello2" << std::endl;
+
 }
 
 void test(double& extT, double& mrtT, double& srtT,
@@ -250,7 +258,7 @@ void test(double& extT, double& mrtT, double& srtT,
 		  xdst, ydst, NDST, xtargets,
 		  extT, mrtT, srtT, reoT, bldT, evaT, nnodes);
 	potT = 1e-6*tm.elapsed();
-
+std::cout << "hello3" << std::endl;
 	if (verify)
 	{
 		const int OFFSET = 0;
@@ -275,7 +283,7 @@ void test(double& extT, double& mrtT, double& srtT,
 			xref[i] = s;
 		}
 #else
-		hpx::parallel::for_loop(hpx::parallel::execution::par, OFFSET, NDST,
+		hpx::parallel::for_loop(hpx::parallel::execution::seq, OFFSET, NDST,
 		[&](int i)
 		{
 			const double xd = xdst[i];
@@ -307,7 +315,7 @@ void test(double& extT, double& mrtT, double& srtT,
 
 		check(&a[0], &b[0], a.size());
 	}
-
+std::cout << "hello4" << std::endl;
 	free(xdst);
 	free(ydst);
 
@@ -316,10 +324,13 @@ void test(double& extT, double& mrtT, double& srtT,
 
 	free(xref);
 	free(yref);
-
+std::cout << "hello5" << std::endl;
 	free(xsrc);
-	free(ysrc);
-	free(sources);
+    std::cout << "hello6" << std::endl;
+    free(ysrc);
+    std::cout << "hello7" << std::endl;
+    free(sources);
+    std::cout << "hello8" << std::endl;
 
 	printf("TEST PASSED.\n");
 }
@@ -330,7 +341,7 @@ void run_test(double &extT, double &mrtT, double &srtT, double &reoT, double &bl
   double extTT(0), mrtTT(0), srtTT(0), reoTT(0), bldTT(0), evaTT(0), potTT(0);
 
   for(size_t i(0); i<numtest; i++){
-
+	  std::cout << "Launching test #" << i+1 << std::endl;
       char filename[256];
       strcpy(filename, "/home/shoshijak/Documents/CSCS/learning/vortex/v-hpx/test-data/dN400");
 
@@ -350,6 +361,7 @@ void run_test(double &extT, double &mrtT, double &srtT, double &reoT, double &bl
       extT, mrtT, srtT = 0;reoT = 0; bldT = 0; evaT = 0; potT = 0;
       test(extT, mrtT, srtT, reoT, bldT, evaT, potT, n, nnodes, NDST,
            theta, tol, fin, verify);
+
       if(printeach){
           printf("TIME for N = %d (%d nodes)  is  %6.2f ms\n", n, nnodes,
                  extT+mrtT+srtT+reoT+bldT);
@@ -365,17 +377,19 @@ void run_test(double &extT, double &mrtT, double &srtT, double &reoT, double &bl
       extTT+=extT; mrtTT+=mrtT; srtTT+=srtT; reoTT+=reoT;
       bldTT+=bldT; evaTT+=evaT; potTT+=potT;
 
+      std::cout << "hello9" << std::endl;
+
 #ifdef RUN_WITH_OMP
   #pragma omp barrier
 #else
       hpx::lcos::barrier::get_global_barrier().synchronize();
 #endif
-
+      std::cout << "hello10" << std::endl;
     }
 
-  extTT/=numtest; mrtTT/=numtest; srtTT/=numtest;
-  reoTT/=numtest; bldTT/=numtest; evaTT/=numtest;
-  potTT/=numtest;
+	  extTT/=numtest; mrtTT/=numtest; srtTT/=numtest;
+	  reoTT/=numtest; bldTT/=numtest; evaTT/=numtest;
+	  potTT/=numtest;
 
 #ifdef RUN_WITH_OMP
       printf("Running with OpenMP");
