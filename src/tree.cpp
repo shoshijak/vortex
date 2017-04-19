@@ -218,9 +218,12 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid)
         nodes[chId].setup(indexmin, indexsup, l + 1, key1, nodeid);
 
         exp_and_child_fut.push_back(
-                hpx::async(
-                        build_tree_hpx,chId
-          ));
+                std::move(hpx::async(
+                        [&,chId]()->hpx::future<void>
+                        {
+                            std::cout << "recursive call: child id = " << chId << "\n";
+                            return build_tree_hpx(chId);
+                        })));
     }
 
     std::cout << "--children all launched--" << exp_and_child_fut.size() << std::endl;

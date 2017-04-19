@@ -18,8 +18,8 @@ void p2e(
 	const  int nsources,
 	const  double xcom,
 	const  double ycom,
-        double rexpansions[],
-        double iexpansions[]);
+	double rexpansions[],
+    double iexpansions[]);
 
 
 double e2p(

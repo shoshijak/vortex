@@ -275,7 +275,7 @@ void reorder(const int N, const int* const keys, const double* const x, const do
 inline void node_setup(const double xsources[], const double ysources[], const double msources[], const int nsources,
                 double& mass, double& xcom, double& ycom, double& radius)
 {
-    std::cout << "--node setup start--" << std::endl;
+    std::cout << "--node setup start-- number of part. " << nsources << std::endl;
 
         mass = 0;
         double weight = 0, xsum = 0, ysum = 0;
