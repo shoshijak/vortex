@@ -180,9 +180,9 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid)
 //	      What I want:
 //	      1. return a future<void> that is ready when p2e_fut is ready
 //	      2. non blocking
-            p2e_fut.get();
-	    return hpx::make_ready_future();
-//        return p2e_fut;
+//            p2e_fut.get();
+//	    return hpx::make_ready_future();
+        return p2e_fut;
 	}
 
 	std::vector<hpx::future<void>> exp_and_child_fut;
@@ -218,20 +218,18 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid)
         nodes[chId].setup(indexmin, indexsup, l + 1, key1, nodeid);
 
         exp_and_child_fut.push_back(
-              std::move(hpx::async(
-                      [&,chId]()
-                      { //! review capture
-                        build_tree_hpx(chId);
-          })));
+                hpx::async(
+                        build_tree_hpx,chId
+          ));
     }
 
     std::cout << "--children all launched--" << exp_and_child_fut.size() << std::endl;
 
     //! (Asynchronously) wait for all the futures in the vector of futures
-    hpx::when_all(exp_and_child_fut).get();
-    //return std::move(exp_and_child_fut[0]); //! TODO blocking, change to non-blocking
-    //return std::move(hpx::when_all(exp_and_child_fut)); //! this would be the "correct" thing to do. Just trying the other one for debugging
-    return hpx::make_ready_future();
+    //hpx::when_all(exp_and_child_fut).get();
+    //return std::move(exp_and_child_fut[0]);
+    return std::move(hpx::when_all(exp_and_child_fut)); //! this would be the "correct" thing to do. Just trying the other one for debugging
+    //return hpx::make_ready_future();
 }
 #endif
 
