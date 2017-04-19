@@ -7,8 +7,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -g -fopenmp -march=native
 # option to run the program with OpenMP rather than HPX
 option(VORTEX_WITH_OPENMP "Use OpenMP for multithreading" OFF)
 
+# option to print (a lot of) messages during execution
+option(VORTEX_WITH_PRINT "Print messages for tree-build" OFF)
+
 if(VORTEX_WITH_OPENMP)
-  add_definitions(-DRUN_WITH_OMP)
+	message("-- building VORTEX with OPENMP")
+	add_definitions(-DRUN_WITH_OMP)
+endif()
+
+if(VORTEX_WITH_PRINT)
+	message("-- Will print messages during tree-build")
+	add_definitions(-DPRINT)
 endif()
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY bin/)
@@ -46,7 +55,6 @@ set(HEADER_FILES
 #####################################
 
 if(VORTEX_WITH_OPENMP)
-message("building VORTEX with OPENMP")
 add_executable(vortex src/omp-main.cpp
     src/kernels.cpp
     src/run-tests.cpp

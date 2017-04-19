@@ -141,8 +141,9 @@ s
 //! 2. if leaf == false, it returns a future<void> which will be ready when its own p2e, and the build_tree_hpx of each one of its children are ready
 hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid)
 {
+#ifdef PRINT
     std::cout << "Curr # nodes : " << currnnodes.load() << ", curr nodeid : " << nodeid << std::endl;
-
+#endif
     Node * const node = nodes + nodeid;
 
 	const int  s    = node->part_start;
@@ -150,20 +151,25 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid)
 	const int  l    = node->level;
 	const int  mId  = node->morton_id;
 	const bool leaf = e - s <= K || l + 1 > LMAX; // K is 32
-
+#ifdef PRINT
     std::cout << " n : " << node << std::endl << " s : " << s    << std::endl  << " e : " << e    << std::endl
               << " l : " << l    << std::endl << " m : " << mId  << std::endl  << " ? : " << leaf << std::endl;
+#endif
 
 	hpx::future<void> setup = hpx::async(
 	      [&,node,s,e,l,mId,leaf](){
+#ifdef PRINT
         std::cout << "--before nodesetup--" << std::endl
                         << "x " << xdata+s << ", n " << e-s
                         << ", m " << node->mass << ", xc " << node->xcom << ", r " << node->r << std::endl;
+#endif
 	    node_setup(xdata + s, ydata + s, mdata + s, e - s,
 		       node->mass, node->xcom, node->ycom, node->r);
-        std::cout << "--after nodesetup--" << std::endl
-                  << "x " << xdata+s << ", n " << e-s
-                  << ", m " << node->mass << ", xc " << node->xcom << ", r " << node->r << std::endl;
+#ifdef PRINT
+      std::cout << "--after nodesetup--" << std::endl
+          << "x " << xdata+s << ", n " << e-s
+          << ", m " << node->mass << ", xc " << node->xcom << ", r " << node->r << std::endl;
+#endif
 	  });
 
 	hpx::future<void> p2e_fut = setup.then(
@@ -173,13 +179,12 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid)
                     node->xcom, node->ycom,
                     expansions + 2*nodeid*ORDER,
                     expansions + 2*nodeid*ORDER + ORDER);
-                std::cout << "--after p2e--" << std::endl;
 	  });
 
 	if (leaf) {
-
+#ifdef PRINT
         std::cout << "--leaf--" << std::endl;
-
+#endif
 //	    Stuff that's not quite what I want:
 //	    p2e_fut.get(); // return hpx::future<void>;  //! John's suggestion... hmm... but it doesn't compile ... :/
 //	    return hpx::async(p2e_fut); //! doesn't make sense
@@ -197,14 +202,15 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid)
     //! atomically fetch the value of the last index in the array of nodes, and increment this index by 4 positions
 	int childbase;
 	childbase = currnnodes.fetch_add(4);
-
-	//! for debugging purposes
+#ifdef PRINT
 	std::cout << "Childbase index is at : " << childbase << std::endl;
-
+#endif
+#ifdef CHECK_ASSERT
 	assert(nodeid < childbase);
 	if (childbase + 4 >= maxnodes)
 		printf("node %d, chbase %d, maxnodes %d\n", nodeid, childbase, maxnodes);
 	assert(childbase + 4 < maxnodes);
+#endif
 
 	node->child_id = childbase;
 
@@ -219,7 +225,9 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid)
         const size_t indexsup = s + c == 3 ? e : upper_bound_vec(s, e, key2, keydata); //! put for_loop in upper_bound code
 
         const int chId = childbase + c;
+#ifdef PRINT
         std::cout << "launching build for ChildId : " << chId << std::endl;
+#endif
         nodes[chId].setup(indexmin, indexsup, l + 1, key1, nodeid);
 
         exp_and_child_fut.push_back(
@@ -230,9 +238,10 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid)
                         })));
     }
 
+#ifdef PRINT
     std::cout << "--children all launched--" << exp_and_child_fut.size() << std::endl;
-
-    //! (Asynchronously) wait for all the futures in the vector of futures
+#endif
+    //! Asynchronously wait for all the futures in the vector of futures
     //hpx::when_all(exp_and_child_fut).get();
     //return hpx::make_ready_future();
     return hpx::when_all(exp_and_child_fut); //! this would be the "correct" thing to do. Just trying the other one for debugging
@@ -359,25 +368,32 @@ hpx::future<void> build(const double* const x, const double*const y, const doubl
 	free(index);
 	free(keys);
 #else
+#ifdef PRINT
     std::cout << "--setting up root node--" << std::endl;
+#endif
     nodes[0].rootsetup(0, n, 0, 0);
-    double dummyTm = 1e-6*tm.elapsedAndReset(); //! TODO put this here or one line lower??
+    double dummyTm = 1e-6*tm.elapsedAndReset();
+#ifdef PRINT
     std::cout << "--launching build from root node--" << std::endl;
+#endif
     hpx::future<void> tree_fut = builder->build_tree_hpx(0);
+#ifdef PRINT
     std::cout << "--build launched from root node--" << std::endl;
     std::cout << "--waiting for future-that-rules-them-all to be ready--" << std::endl;
+#endif
     return tree_fut.then(hpx::launch::sync,
             //! will only be called once the function build_tree_hpx(0) (run on the root node), which is effectively the "future that rules them all" is ready.
             //! sync launch policy s.t. the timing is accurate: we call the lambda synchronously immediately after the future tree_fut is ready.
-                         [&,builder](hpx::future<void> fv){ //! TODO review capture
+                         [&,builder](hpx::future<void> fv){
+#ifdef PRINT
                              std::cout << "--future that rules them all ready--" << std::endl;
                              std::cout << "--tree building done, setting time--" << std::endl;
+#endif
                              bldTm = 1e-6 * tm.elapsedAndReset();
                              int a = builder->currnnodes;
                              nnodes = a;
                              free(index);
                              free(keys);
-                             std::cout << "--time set and memory freed!--" << std::endl;
                          });
 #endif
 

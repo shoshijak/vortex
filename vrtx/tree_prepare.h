@@ -275,10 +275,11 @@ void reorder(const int N, const int* const keys, const double* const x, const do
 inline void node_setup(const double xsources[], const double ysources[], const double msources[], const int nsources,
                 double& mass, double& xcom, double& ycom, double& radius)
 {
+#ifdef PRINT
     std::cout << "--node setup start--" << std::endl
               << "x " << xsources[0] << ", n " << nsources << std::endl
               << "m " << mass <<", xc " << xcom << ", r " << radius << std::endl;
-
+#endif
         mass = 0;
         double weight = 0, xsum = 0, ysum = 0;
 
@@ -309,7 +310,9 @@ inline void node_setup(const double xsources[], const double ysources[], const d
 
         radius = sqrt(r2);
 
+#ifdef PRINT
         std::cout << "--node setup end--" << std::endl;
+#endif
 }
 
 

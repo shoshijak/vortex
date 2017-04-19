@@ -147,7 +147,9 @@ void potential(double theta,
 	posix_memalign((void **)&nodes, 32, sizeof(Node) * maxnodes);
 	posix_memalign((void **)&expansions, 32, sizeof(double) * 2 * ORDER * maxnodes);
 
+#ifdef PRINT
 	std::cout << "[run-tests.cpp] Start building tree: " << std::endl;
+#endif
 
 #ifdef RUN_WITH_OMP
     build(
@@ -163,14 +165,18 @@ void potential(double theta,
 	      nodes, expansions,
 	      extT, mrtT, srtT, reoT, bldT,
 	      nnodes);
+
+#ifdef PRINT
 	std::cout << "[run-tests.cpp] Building tree returned. waiting... : " << std::endl;
-	done_building_tree.wait();
-	    //! wait for the tree building to be done
-	    //! before I start solving
-	    //! (blocking)
 #endif
 
+	done_building_tree.wait();
+	    //! wait for the tree building to be done before solving (blocking)
+#endif
+
+#ifdef PRINT
 	std::cout << "[run-tests.cpp] Building tree DONE " << std::endl;
+#endif
 
 	Timer tm;
 	tm.start();

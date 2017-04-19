@@ -18,7 +18,10 @@ void p2e(
   double *__restrict rexpansions,
   double *__restrict iexpansions  )
 {
+#ifdef PRINT
     std::cout << "--p2e start--" << std::endl;
+#endif
+
     double
 		rxp_0 = 0, ixp_0 = 0,
 		rxp_1 = 0, ixp_1 = 0,
@@ -203,7 +206,6 @@ void p2e(
                 ixp_11 -= itmp;
                 
         }
-        //! TODO why am I doing this??
          double rsum_0 = rxp_0;
          double isum_0 = ixp_0;
          double rsum_1 = rxp_1;
@@ -266,7 +268,9 @@ void p2e(
         rexpansions[11] = rsum_11;
         iexpansions[11] = isum_11;
 
+#ifdef PRINT
     std::cout << "--p2e end--" << std::endl;
+#endif
 
         return;
 }
