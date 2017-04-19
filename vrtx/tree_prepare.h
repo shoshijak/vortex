@@ -183,10 +183,14 @@ void morton(const int N, const double* const x, const double* const y,
 
 void sort(const int N, int* index, int* keys)
 {
+#ifdef PRINT
     std::cout << "sort: starting ..." << std::endl;
+#endif
 	std::pair<int, int> * kv = NULL;
 	posix_memalign((void **)&kv, 32, sizeof(*kv) * N);
+#ifdef PRINT
     std::cout << "sort: memory setup ..." << std::endl;
+#endif
 #ifdef RUN_WITH_OMP
 	#pragma omp parallel for
 	for(int i = 0; i < N; ++i)
@@ -195,8 +199,8 @@ void sort(const int N, int* index, int* keys)
                 kv[i].second = i;
 	}
 #else
-        hpx::parallel::static_chunk_size param;//! SEQ HERE
-        auto policy = hpx::parallel::execution::seq.with(param);
+        hpx::parallel::static_chunk_size param;
+        auto policy = hpx::parallel::execution::par.with(param);
         hpx::parallel::for_loop(policy, 0, N,
                                 [&](int i)
         {
@@ -204,7 +208,9 @@ void sort(const int N, int* index, int* keys)
                 kv[i].second = i;
         }
                                 );
+#ifdef PRINT
     std::cout << "sort: pairs generated" << std::endl;
+#endif
 #endif
 #ifdef RUN_WITH_OMP
 #if  !defined(__INTEL_COMPILER) && !defined(__clang__)
@@ -217,8 +223,9 @@ void sort(const int N, int* index, int* keys)
                     policy,
                     kv, kv+N);
 #endif
-
+#ifdef PRINT
     std::cout << "sort: parallel sort done" << std::endl;
+#endif
 
 #ifdef RUN_WITH_OMP
 	#pragma omp parallel for
@@ -236,9 +243,13 @@ void sort(const int N, int* index, int* keys)
         }
                                 );
 #endif
+#ifdef PRINT
     std::cout << "sort: indices and keys written" << std::endl;
+#endif
 	free(kv);
+#ifdef PRINT
     std::cout << "sort: memory of pairs freed" << std::endl;
+#endif
 }
 
 void reorder(const int N, const int* const keys, const double* const x, const double* const y, const double* const m, double* xsorted, double* ysorted, double *msorted)

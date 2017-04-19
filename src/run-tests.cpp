@@ -134,12 +134,9 @@ void potential(double theta,
 	       double& reoT, double& bldT, double& evaT,
 	       int& nnodes)
 {
-	double /**x, *y, *m,*/ *xsorted, *ysorted, *msorted;
+	double *xsorted, *ysorted, *msorted;
 	double *expansions;
 
-/*	x = xsrc;
-	y = ysrc;
-	m = sources;*/
 	int n = NSRC;
 
 	posix_memalign((void **)&xsorted, 32, sizeof(double) * n);
@@ -173,17 +170,17 @@ void potential(double theta,
 	      extT, mrtT, srtT, reoT, bldT,
 	      nnodes);
 
-//#ifdef PRINT
+#ifdef PRINT
 	std::cout << "[run-tests.cpp] Building tree returned. waiting... : " << std::endl;
-//#endif
+#endif
 
 	done_building_tree.wait();
 	    //! wait for the tree building to be done before solving (blocking)
 #endif
 
-//#ifdef PRINT
+#ifdef PRINT
 	std::cout << "[run-tests.cpp] Building tree DONE " << std::endl;
-//#endif
+#endif
 
 	Timer tm;
 	tm.start();
@@ -197,22 +194,30 @@ void potential(double theta,
 	  }
 #else
     std::cout << "Starting evaluation of " << NDST << " targets : " << std::endl;
-        hpx::parallel::for_loop(
-                hpx::parallel::execution::seq, 0, NDST,
-                [&](int i) {
-                    evaluate(nodes, expansions, xsorted, ysorted, msorted,
-                             thetasquared, xtargets + i, xdst[i], ydst[i]);
-                });
+
+    hpx::async(hpx::launch::sync,
+               hpx::util::annotated_function(
+                       [&]() {
+                           hpx::parallel::for_loop(
+                                   hpx::parallel::execution::par, 0, NDST,
+                                   [&](int i) {
+                                       evaluate(nodes, expansions, xsorted, ysorted, msorted,
+                                                thetasquared, xtargets + i, xdst[i], ydst[i]);
+                                   }
+                           );
+                       },"solve"
+               )
+    );
+
 #endif
 
 	evaT = 1e-6*tm.elapsed();
-std::cout << "hello" << std::endl;
+
 	free(xsorted);
 	free(ysorted);
 	free(msorted);
 	free(nodes);
 	free(expansions);
-std::cout << "hello2" << std::endl;
 
 }
 
@@ -254,68 +259,73 @@ void test(double& extT, double& mrtT, double& srtT,
 
 	Timer tm;
 	tm.start();
-	potential(theta, xsrc, ysrc, sources, NSRC,
-		  xdst, ydst, NDST, xtargets,
-		  extT, mrtT, srtT, reoT, bldT, evaT, nnodes);
+
+    potential(theta, xsrc, ysrc, sources, NSRC,
+              xdst, ydst, NDST, xtargets,
+              extT, mrtT, srtT, reoT, bldT, evaT, nnodes);
+
 	potT = 1e-6*tm.elapsed();
-std::cout << "hello3" << std::endl;
-	if (verify)
-	{
-		const int OFFSET = 0;
+
+    hpx::async(hpx::launch::sync,
+               hpx::util::annotated_function(
+                       [&]() {
+    if (verify) {
+        const int OFFSET = 0;
 
 #ifdef RUN_WITH_OMP
 #pragma omp parallel for
-		for(int i = OFFSET; i < NDST; i++)
-		{
-			const double xd = xdst[i];
-			const double yd = ydst[i];
+        for(int i = OFFSET; i < NDST; i++)
+        {
+            const double xd = xdst[i];
+            const double yd = ydst[i];
 
-			double s = 0;
+            double s = 0;
 
-			for(int j = 0; j < NSRC; ++j)
-			{
-				const double xr = xd - xsrc[j];
-				const double yr = yd - ysrc[j];
-				const double r2 = xr * xr + yr * yr;
-				const double f  = fabs(r2) > eps;
-				s += 0.5 * f * log(r2 + eps) * sources[j];
-			}
-			xref[i] = s;
-		}
+            for(int j = 0; j < NSRC; ++j)
+            {
+                const double xr = xd - xsrc[j];
+                const double yr = yd - ysrc[j];
+                const double r2 = xr * xr + yr * yr;
+                const double f  = fabs(r2) > eps;
+                s += 0.5 * f * log(r2 + eps) * sources[j];
+            }
+            xref[i] = s;
+        }
 #else
-		hpx::parallel::for_loop(hpx::parallel::execution::seq, OFFSET, NDST,
-		[&](int i)
-		{
-			const double xd = xdst[i];
-			const double yd = ydst[i];
-			double s = 0;
 
-			for(int j = 0; j < NSRC; ++j)
-			{
-				const double xr = xd - xsrc[j];
-				const double yr = yd - ysrc[j];
-				const double r2 = xr * xr + yr * yr;
-				const double f  = fabs(r2) > eps;
-				s += 0.5 * f * log(r2 + eps) * sources[j];
-			}
-			xref[i] = s;
-		});
+        hpx::parallel::for_loop(hpx::parallel::execution::par, OFFSET, NDST,
+                                [&](int i) {
+                                    const double xd = xdst[i];
+                                    const double yd = ydst[i];
+                                    double s = 0;
+
+                                    for (int j = 0; j < NSRC; ++j) {
+                                        const double xr = xd - xsrc[j];
+                                        const double yr = yd - ysrc[j];
+                                        const double r2 = xr * xr + yr * yr;
+                                        const double f = fabs(r2) > eps;
+                                        s += 0.5 * f * log(r2 + eps) * sources[j];
+                                    }
+                                    xref[i] = s;
+                                });
+
 #endif
 
 
-		std::vector<double> a, b, c, d;
+        std::vector<double> a, b, c, d;
 
-		for(int i = OFFSET; i < NDST; i++)
-		{
-			a.push_back(xref[i]);
-			b.push_back(xtargets[i]);
-			c.push_back(yref[i]);
-			d.push_back(ytargets[i]);
-		}
+        for (int i = OFFSET; i < NDST; i++) {
+            a.push_back(xref[i]);
+            b.push_back(xtargets[i]);
+            c.push_back(yref[i]);
+            d.push_back(ytargets[i]);
+        }
 
-		check(&a[0], &b[0], a.size());
-	}
-std::cout << "hello4" << std::endl;
+        check(&a[0], &b[0], a.size());
+    }
+
+	},"verify_result"));
+
 	free(xdst);
 	free(ydst);
 
@@ -324,13 +334,10 @@ std::cout << "hello4" << std::endl;
 
 	free(xref);
 	free(yref);
-std::cout << "hello5" << std::endl;
+
 	free(xsrc);
-    std::cout << "hello6" << std::endl;
     free(ysrc);
-    std::cout << "hello7" << std::endl;
     free(sources);
-    std::cout << "hello8" << std::endl;
 
 	printf("TEST PASSED.\n");
 }
@@ -377,14 +384,12 @@ void run_test(double &extT, double &mrtT, double &srtT, double &reoT, double &bl
       extTT+=extT; mrtTT+=mrtT; srtTT+=srtT; reoTT+=reoT;
       bldTT+=bldT; evaTT+=evaT; potTT+=potT;
 
-      std::cout << "hello9" << std::endl;
 
 #ifdef RUN_WITH_OMP
   #pragma omp barrier
 #else
       hpx::lcos::barrier::get_global_barrier().synchronize();
 #endif
-      std::cout << "hello10" << std::endl;
     }
 
 	  extTT/=numtest; mrtTT/=numtest; srtTT/=numtest;
