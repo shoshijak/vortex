@@ -15,8 +15,8 @@ int hpx_main()
 
   double extT, mrtT, srtT, reoT, bldT, evaT, potT;
   int n, nnodes, NDST;
-  int numtests = 1;
-  bool printeach = false;
+  int numtests = 15;
+  bool printeach = true;
 
   run_test(extT, mrtT, srtT, reoT, bldT, evaT, potT,
            n, nnodes, NDST, theta, tol_, verify,

@@ -157,7 +157,7 @@ void potential(double theta,
 
 #ifdef RUN_WITH_OMP
     build(
-            x, y, m, n, k,
+            xsrc, ysrc, sources, n, k,
             xsorted, ysorted, msorted,
             nodes, expansions,
             extT, mrtT, srtT, reoT, bldT,
@@ -266,9 +266,11 @@ void test(double& extT, double& mrtT, double& srtT,
 
 	potT = 1e-6*tm.elapsed();
 
+#ifndef RUN_WITH_OMP
     hpx::async(hpx::launch::sync,
                hpx::util::annotated_function(
                        [&]() {
+#endif
     if (verify) {
         const int OFFSET = 0;
 
@@ -323,8 +325,9 @@ void test(double& extT, double& mrtT, double& srtT,
 
         check(&a[0], &b[0], a.size());
     }
-
+#ifndef RUN_WITH_OMP
 	},"verify_result"));
+#endif
 
 	free(xdst);
 	free(ydst);
@@ -397,7 +400,7 @@ void run_test(double &extT, double &mrtT, double &srtT, double &reoT, double &bl
 	  potTT/=numtest;
 
 #ifdef RUN_WITH_OMP
-      printf("Running with OpenMP");
+      printf("Running with OpenMP\n");
 #else
       printf("Running with HPX\n");
 #endif

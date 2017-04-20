@@ -67,10 +67,9 @@ public:
 #ifdef RUN_WITH_OMP
 void TreeBuilder::build_tree_omp(const int nodeid)
 {
-    //! TODO take this line out
-    //! is this a safe access to currnnodes??
+#ifdef PRINT
     std::cout << "Curr # nodes : " << currnnodes << ", nodeid : " << nodeid << std::endl;
-
+#endif
 	Node * const node = nodes + nodeid;
 
 	const int s = node->part_start;
@@ -79,13 +78,15 @@ void TreeBuilder::build_tree_omp(const int nodeid)
 	const int mId = node->morton_id;
 	const bool leaf = e - s <= K || l + 1 > LMAX;
 
+#ifdef PRINT
     std::cout << " n : " << node << std::endl
               << " s : " << s << std::endl
               << " e : " << e << std::endl
               << " l : " << l << std::endl
               << " m : " << mId << std::endl
               << " ? : " << leaf << std::endl;
-s
+#endif
+
 	node_setup(xdata + s, ydata + s, mdata + s, e - s,
 				node->mass, node->xcom, node->ycom, node->r);
 	p2e(xdata + s, ydata + s, mdata + s, e - s, node->xcom, node->ycom,
@@ -93,10 +94,13 @@ s
 
     if(leaf == true)
     {
+#ifdef PRINT
         std::cout << "--leaf--" << std::endl;
+#endif
     } else if (leaf == false) {
+#ifdef PRINT
         std::cout << "--split--" << std::endl;
-
+#endif
 	    int childbase;
 	    #pragma omp atomic capture
 	    {
@@ -281,7 +285,6 @@ void build(const double* const x, const double*const y, const double* mass, cons
 						xsorted, ysorted, mass_sorted, index, ext, xmin, ymin, k, expansions);
 
 	tm.start();
-#ifdef RUN_WITH_OMP
 	#pragma omp parallel
 	#pragma omp single nowait
 	{
@@ -293,22 +296,6 @@ void build(const double* const x, const double*const y, const double* mass, cons
 
 	free(index);
 	free(keys);
-#else
-	nodes[0].rootsetup(0, n, 0, 0);
-	double dummyTm = 1e-6*tm.elapsedAndReset(); //! TODO put this here or one line lower??
-	hpx::future<void> tree_fut = builder->build_tree_hpx(0);
-	return tree_fut.then(hpx::launch::sync,
-			     //! will only be called once the function build_tree_hpx(0) (run on the root node), which is effectively the "future that rules them all" is ready.
-			     //! sync launch policy s.t. the timing is accurate: we call the lambda synchronously immediately after the future tree_fut is ready.
-			     [&,builder](hpx::future<void> fv){ //! TODO review capture
-	    bldTm = 1e-6 * tm.elapsedAndReset();
-	    int a = builder->currnnodes;
-	    nnodes = a;
-            free(index);
-            free(keys);
-          });
-#endif
-
 }
 #else
 // n = nsrc, k = max leaf capacity
@@ -395,8 +382,8 @@ hpx::future<void> build(const double* const x, const double*const y, const doubl
 #ifdef PRINT
     std::cout << "--setting up root node--" << std::endl;
 #endif
+    double dummyTm = 1e-6 * tm.elapsedAndReset();
     nodes[0].rootsetup(0, n, 0, 0);
-    double dummyTm = 1e-6*tm.elapsedAndReset();
 #ifdef PRINT
     std::cout << "--launching build from root node--" << std::endl;
 #endif
@@ -412,7 +399,8 @@ hpx::future<void> build(const double* const x, const double*const y, const doubl
     std::cout << "--waiting for future-that-rules-them-all to be ready--" << std::endl;
 #endif
 
-	tree_fut.wait(); //! TODO should be taken out at some point ... ?
+	tree_fut.wait();
+    bldTm = 1e-6 * tm.elapsedAndReset();
     return tree_fut.then(hpx::launch::sync,
             //! will only be called once the function build_tree_hpx(0) (run on the root node), which is effectively the "future that rules them all" is ready.
             //! sync launch policy s.t. the timing is accurate: we call the lambda synchronously immediately after the future tree_fut is ready.
@@ -421,9 +409,7 @@ hpx::future<void> build(const double* const x, const double*const y, const doubl
                              std::cout << "--future that rules them all ready--" << std::endl;
                              std::cout << "--tree building done, setting time--" << std::endl;
 #endif
-                             bldTm = 1e-6 * tm.elapsedAndReset();
                              nnodes = builder->currnnodes;
-
 							 delete builder;
 							 free(index);
 							 free(keys);
