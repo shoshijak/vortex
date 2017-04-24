@@ -1,6 +1,5 @@
 
 #include "simulation.h"
-
 #include <hpx/hpx.hpp>                  // hpx
 #include <hpx/hpx_init.hpp>
 #include <hpx/include/iostreams.hpp>
@@ -22,7 +21,6 @@ int hpx_main()
            n, nnodes, NDST, theta, tol_, verify,
            numtests, printeach);
   return hpx::finalize();
-
 }
 
 int main(int argc, char* argv[])

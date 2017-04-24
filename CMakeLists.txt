@@ -28,7 +28,7 @@ if(NOT VORTEX_WITH_OPENMP)
 find_package(HPX)
 endif()
 
-# build all of this with
+# if with HPX: build all of this with
 # cmake -DHWLOC_ROOT=/usr/local/include/hwloc
 #	-DHPX_WITH_MALLOC=jemalloc
 #   -DHPX_DIR=~/Documents/CSCS/hpx-build/lib/cmake/HPX
