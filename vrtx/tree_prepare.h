@@ -108,23 +108,34 @@ void extent(const int N, const double* const x, const double* const y,
         ext1 = (*std::max_element(ypartials[1], ypartials[1] + nthreads) - ymin);
 	}
 #else
+#ifdef PRINT
+    std::cout << "[tree_prepare.h] in function extent" << std::endl;
+#endif
          hpx::parallel::static_chunk_size param;
          hpx::parallel::execution::parallel_task_policy par_policy;
          auto policy = par_policy.with(param);
+#ifdef PRINT
+    std::cout << "[tree_prepare.h] in function extent: about to launch Minmax element search." << std::endl;
+#endif
 
-                auto minmaxX_ = hpx::parallel::minmax_element(
-                            policy,
-                            x,
-                            x+N);
-                auto minmaxY_ = hpx::parallel::minmax_element(
-                            policy,
-                            y,
-                            y+N);
+         auto minmaxX_ = hpx::parallel::minmax_element(policy, x, x+N);
+#ifdef PRINT
+    std::cout << "[tree_prepare.h] in function extent: Minmax element search launched on X." << std::endl;
+#endif
+
+         auto minmaxY_ = hpx::parallel::minmax_element(
+                    policy, y, y+N);
+#ifdef PRINT
+    std::cout << "[tree_prepare.h] in function extent: Minmax element search launched on Y." << std::endl;
+#endif
 
                 auto minmaxX = minmaxX_.get();
                 auto minmaxY = minmaxY_.get();
                 xmin = *minmaxX.first;
                 ymin = *minmaxY.first;
+#ifdef PRINT
+    std::cout << "[tree_prepare.h] in function extent: Minmax elements found." << std::endl;
+#endif
                 double ext0 = *minmaxX.second - xmin;
                 double ext1 = *minmaxY.second - ymin;
 #endif
@@ -133,6 +144,9 @@ void extent(const int N, const double* const x, const double* const y,
         ext = fmax(ext0, ext1) * (1 + 2 * EPS);
         xmin -= EPS * ext;
         ymin -= EPS * ext;
+#ifdef PRINT
+    std::cout << "[tree_prepare.h] in function extent: leaving." << std::endl;
+#endif
 }
 
 void morton(const int N, const double* const x, const double* const y,
@@ -159,9 +173,6 @@ void morton(const int N, const double* const x, const double* const y,
 		index[i] = xid | (yid << 1);
 	}
 #else
-    hpx::parallel::static_chunk_size param;
-    auto policy = hpx::parallel::execution::par.with(param);
-
     hpx::parallel::for_loop(hpx::parallel::execution::par, 0, N,
                        [&](int i){
             int xid = floor((x[i] - xmin) / ext * (1 << LMAX));

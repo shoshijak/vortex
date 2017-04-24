@@ -307,12 +307,19 @@ hpx::future<void> build(const double* const x, const double*const y, const doubl
                         double& exTm, double& morTm, double& sorTm,
                         double& reoTm, double& bldTm, int& nnodes)
 {
+#ifdef PRINT
+    std::cout << "[tree.cpp] in build" << std::endl;
+#endif
     Timer tm;
     int *index, *keys;
     double ext, xmin, ymin;
 
     posix_memalign((void **)&index, 32, sizeof(int) * n);
     posix_memalign((void **)&keys,  32, sizeof(int) * n);
+
+#ifdef PRINT
+    std::cout << "[tree.cpp] preparing tree-build" << std::endl;
+#endif
 
 	tm.start();
 
@@ -324,7 +331,7 @@ hpx::future<void> build(const double* const x, const double*const y, const doubl
 
 	exTm = 1e-6 * tm.elapsedAndReset();
 #ifdef PRINT
-    std::cout << "Extent computed." << std::endl;
+    std::cout << "[tree.cpp] Extent computed." << std::endl;
 #endif
 
 	hpx::async(hpx::launch::sync,
