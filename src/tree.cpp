@@ -31,8 +31,6 @@
 
 #endif
 
-#define HPX_TASK_THRESHOLD 25000;
-
 class TreeBuilder
 {
     Node   *nodes;
@@ -61,7 +59,7 @@ public:
 #ifdef RUN_WITH_OMP
     void build_tree_omp(const int nodeid); // using openMP tasking
 #else
-    hpx::future<void> build_tree_hpx(const int nodeid); // spawning HPX tasks
+    hpx::future<void> build_tree_hpx(const int nodeid, std::uint64_t hpx_task_threshold); // spawning HPX tasks
 #endif
 };
 
@@ -144,7 +142,7 @@ void TreeBuilder::build_tree_omp(const int nodeid)
 //! each execution of build_tree_hpx returns in one of these 2 ways:
 //! 1. if leaf == true, it returns a future<void> which will be ready when p2e is ready
 //! 2. if leaf == false, it returns a future<void> which will be ready when its own p2e, and the build_tree_hpx of each one of its children are ready
-hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid)
+hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid, std::uint64_t hpx_task_threshold)
 {
 #ifdef PRINT
     std::cout << "Curr # nodes : " << currnnodes.load() << ", curr nodeid : " << nodeid << std::endl;
@@ -161,7 +159,7 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid)
               << " l : " << l    << std::endl << " m : " << mId  << std::endl  << " ? : " << leaf << std::endl;
 #endif
 
-    bool use_tasks = (e-s) > HPX_TASK_THRESHOLD;
+    bool use_tasks = (e-s) > hpx_task_threshold;
 
     hpx::future<void> p2e_fut;
 
@@ -254,14 +252,14 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid)
             exp_and_child_fut.push_back(
                     std::move(hpx::async(
                             hpx::util::annotated_function(
-                                    [&,chId]()->hpx::future<void>
+                                    [&,chId,hpx_task_threshold]()->hpx::future<void>
                                     {
-                                        return build_tree_hpx(chId);
+                                        return build_tree_hpx(chId, hpx_task_threshold);
                                     }, "build_tree_rec")
                     )));
         }
         else {
-            build_tree_hpx(chId);
+            build_tree_hpx(chId, hpx_task_threshold);
         }
     }
 
@@ -335,7 +333,7 @@ hpx::future<void> build(const double* const x, const double*const y, const doubl
                         double* xsorted, double* ysorted, double* mass_sorted,
                         Node *nodes, double *expansions,
                         double& exTm, double& morTm, double& sorTm,
-                        double& reoTm, double& bldTm, int& nnodes)
+                        double& reoTm, double& bldTm, int& nnodes, std::uint64_t hpx_task_threshold)
 {
 #ifdef PRINT
     std::cout << "[tree.cpp] in build" << std::endl;
@@ -428,7 +426,7 @@ hpx::future<void> build(const double* const x, const double*const y, const doubl
     hpx::async(hpx::launch::sync,
                hpx::util::annotated_function(
                        [&]() {
-                           tree_fut = builder->build_tree_hpx(0);
+                           tree_fut = builder->build_tree_hpx(0, hpx_task_threshold);
                        },"build_tree_rec_0"
                ));
 #ifdef PRINT

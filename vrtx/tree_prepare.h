@@ -17,6 +17,7 @@
 #endif
 
 #include <cmath>
+#include "simulation.h"
 
 #define LMAX 15 // probs could do much smaller - also defined in simulation.h
 

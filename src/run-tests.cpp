@@ -132,7 +132,7 @@ void potential(double theta,
 	       double *xdst, double *ydst, int NDST, double *xtargets,
 	       double& extT, double& mrtT, double& srtT,
 	       double& reoT, double& bldT, double& evaT,
-	       int& nnodes)
+	       int& nnodes, std::uint64_t hpx_task_threshold)
 {
 	double *xsorted, *ysorted, *msorted;
 	double *expansions;
@@ -168,7 +168,7 @@ void potential(double theta,
 	      xsorted, ysorted, msorted,
 	      nodes, expansions,
 	      extT, mrtT, srtT, reoT, bldT,
-	      nnodes);
+	      nnodes, hpx_task_threshold);
 
 #ifdef PRINT
 	std::cout << "[run-tests.cpp] Building tree returned. waiting... : " << std::endl;
@@ -224,7 +224,7 @@ void potential(double theta,
 void test(double& extT, double& mrtT, double& srtT,
 	  double& reoT, double& bldT, double& evaT,
 	  double& potT, int& NSRC, int& nnodes, int& NDST,
-	  double theta, double tol, FILE * f, bool verify)
+	  double theta, double tol, FILE * f, bool verify, std::uint64_t hpx_task_threshold)
 {
 	fread(&NSRC, sizeof(int), 1, f);
 
@@ -262,7 +262,7 @@ void test(double& extT, double& mrtT, double& srtT,
 
     potential(theta, xsrc, ysrc, sources, NSRC,
               xdst, ydst, NDST, xtargets,
-              extT, mrtT, srtT, reoT, bldT, evaT, nnodes);
+              extT, mrtT, srtT, reoT, bldT, evaT, nnodes, hpx_task_threshold);
 
 	potT = 1e-6*tm.elapsed();
 
@@ -345,7 +345,7 @@ void test(double& extT, double& mrtT, double& srtT,
 	printf("TEST PASSED.\n");
 }
 
-void run_test(double &extT, double &mrtT, double &srtT, double &reoT, double &bldT, double &evaT, double &potT, int& n, int& nnodes, int& NDST, double theta, double tol, bool verify, size_t const numtest, bool printeach)
+void run_test(double &extT, double &mrtT, double &srtT, double &reoT, double &bldT, double &evaT, double &potT, int& n, int& nnodes, int& NDST, double theta, double tol, bool verify, size_t const numtest, bool printeach, std::uint64_t hpx_task_threshold)
 {
 
   double extTT(0), mrtTT(0), srtTT(0), reoTT(0), bldTT(0), evaTT(0), potTT(0);
@@ -370,7 +370,7 @@ void run_test(double &extT, double &mrtT, double &srtT, double &reoT, double &bl
 
       extT, mrtT, srtT = 0;reoT = 0; bldT = 0; evaT = 0; potT = 0;
       test(extT, mrtT, srtT, reoT, bldT, evaT, potT, n, nnodes, NDST,
-           theta, tol, fin, verify);
+           theta, tol, fin, verify, hpx_task_threshold);
 
       if(printeach){
           printf("TIME for N = %d (%d nodes)  is  %6.2f ms\n", n, nnodes,

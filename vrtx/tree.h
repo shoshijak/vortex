@@ -55,6 +55,6 @@ hpx::future<void> build(const double* const x, const double* const y, const doub
         double* xsorted, double* ysorted, double* mass_sorted,
            Node *nodes, double *expansions,
            double &exTm, double &morTm,
-           double &sorTm, double &reoTm, double &bldTm, int &nnodes);
+           double &sorTm, double &reoTm, double &bldTm, int &nnodes, std::uint64_t hpx_task_threshold);
 #endif
 

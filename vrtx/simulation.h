@@ -15,8 +15,8 @@ void potential(double theta, double *xsrc, double *ysrc, double *sources, int NS
     double *xdst, double *ydst, int NDST, double *xtargets,
                double& extT, double& mrtT, double& srtT,
                double& reoT, double& bldT, double& evaT,
-               int& nnodes);
+               int& nnodes, std::uint64_t hpx_task_threshold);
 
-void test(double &extT, double &mrtT, double &srtT, double &reoT, double &bldT, double &evaT, double &potT, int& n, int& nnodes, int& NDST, double theta, double tol, FILE * f = NULL, bool verify = true);
+void test(double &extT, double &mrtT, double &srtT, double &reoT, double &bldT, double &evaT, double &potT, int& n, int& nnodes, int& NDST, double theta, double tol, FILE * f = NULL, bool verify = true, std::uint64_t hpx_task_threshold = 0);
 
-void run_test(double &extT, double &mrtT, double &srtT, double &reoT, double &bldT, double &evaT, double &potT, int& n, int& nnodes, int& NDST, double theta, double tol, bool verify = true, size_t const numtest = 1, bool printeach = false);
+void run_test(double &extT, double &mrtT, double &srtT, double &reoT, double &bldT, double &evaT, double &potT, int& n, int& nnodes, int& NDST, double theta, double tol, bool verify = true, size_t const numtest = 1, bool printeach = false, std::uint64_t hpx_task_threshold = 0);

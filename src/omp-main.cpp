@@ -12,7 +12,7 @@ int main()
 
   double extT, mrtT, srtT, reoT, bldT, evaT, potT;
   int n, nnodes, NDST;
-  int numtests = 15;
+  int numtests = 10;
   bool printeach = true;
 
   run_test(extT, mrtT, srtT, reoT, bldT, evaT, potT,

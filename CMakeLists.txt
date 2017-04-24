@@ -33,6 +33,8 @@ endif()
 #	-DHPX_WITH_MALLOC=jemalloc
 #   -DHPX_DIR=~/Documents/CSCS/hpx-build/lib/cmake/HPX
 
+# run with
+# ./bin/hpx-vortex -Ihpx.stacks.small_size=0x40000 --hpx:threads all --hpx:print-counter /threads{locality#0/total}/count/cumulative --hpx_task_threshold 2
 
 set(SOURCE_FILES
 				src/kernels.cpp
