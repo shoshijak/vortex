@@ -3,6 +3,9 @@
 #include <hpx/hpx.hpp>                  // hpx
 #include <hpx/hpx_init.hpp>
 #include <hpx/include/iostreams.hpp>
+#include <hpx/parallel/executors.hpp>
+#include <hpx/include/async.hpp>
+#include <hpx/lcos/future_wait.hpp>
 #include <boost/format.hpp>
 
 
@@ -27,6 +30,7 @@ int hpx_main(boost::program_options::variables_map& vm)
   run_test(extT, mrtT, srtT, reoT, bldT, evaT, potT,
            n, nnodes, NDST, theta, tol_, verify,
            numtests, printeach, hpx_task_threshold);
+
   return hpx::finalize();
 }
 

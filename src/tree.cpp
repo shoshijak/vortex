@@ -21,18 +21,18 @@
 #include <hpx/include/async.hpp>
 #include <hpx/include/util.hpp>
 #include <hpx/include/actions.hpp>
-#include <hpx/parallel/executors.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <utility>
 #include <string>
 #include <boost/format.hpp>
-
 #endif
 
-//! Define executors:
-hpx::parallel::main_pool_executor exec_main;
+//! EXECUTORS
+hpx::threads::executors::default_executor exec_split(1);
+hpx::threads::executors::default_executor exec_setup(2);
+hpx::threads::executors::default_executor exec_p2e(3);
 
 class TreeBuilder
 {
@@ -147,6 +147,7 @@ void TreeBuilder::build_tree_omp(const int nodeid)
 //! 2. if leaf == false, it returns a future<void> which will be ready when its own p2e, and the build_tree_hpx of each one of its children are ready
 hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid, std::uint64_t hpx_task_threshold)
 {
+
 #ifdef PRINT
     std::cout << "Curr # nodes : " << currnnodes.load() << ", curr nodeid : " << nodeid << std::endl;
 #endif
@@ -157,17 +158,20 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid, std::uint64_t hp
     const int  l    = node->level;
     const int  mId  = node->morton_id;
     const bool leaf = e - s <= K || l + 1 > LMAX; // K is 32
-#ifdef PRINT
-    std::cout << " n : " << node << std::endl << " s : " << s    << std::endl  << " e : " << e    << std::endl
-              << " l : " << l    << std::endl << " m : " << mId  << std::endl  << " ? : " << leaf << std::endl;
-#endif
 
     bool use_tasks = (e-s) > hpx_task_threshold;
+
+#ifdef PRINT
+    std::cout << " n : " << node << std::endl << " s : " << s    << std::endl  << " e : " << e    << std::endl
+              << " l : " << l    << std::endl << " m : " << mId  << std::endl  << " ? : " << leaf << std::endl
+              << " spawn task? " << use_tasks << std::endl;
+#endif
+
 
     hpx::future<void> p2e_fut;
 
     if (use_tasks) {
-        hpx::future<void> setup = hpx::async(
+        hpx::future<void> setup = hpx::async(exec_setup,
                 hpx::util::annotated_function(
                         [&,node,s,e,l,mId,leaf](){
     #ifdef PRINT
@@ -184,7 +188,7 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid, std::uint64_t hp
     #endif
           }, "node_setup"));
 
-        p2e_fut = setup.then(
+        p2e_fut = setup.then(exec_p2e,
                 hpx::util::annotated_function(
                 [&,node,nodeid,s,e](hpx::future<void> fv)
                 {
@@ -253,7 +257,7 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid, std::uint64_t hp
 
         if (use_tasks) {
             exp_and_child_fut.push_back(
-                    std::move(hpx::async(exec_main, 
+                    std::move(hpx::async(exec_split,
                             hpx::util::annotated_function(
                                     [&,chId,hpx_task_threshold]()->hpx::future<void>
                                     {

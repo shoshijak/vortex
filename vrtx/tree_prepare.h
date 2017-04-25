@@ -69,7 +69,7 @@ void extent(const int N, const double* const x, const double* const y,
 
         static const int chunksize = 1024 * 4;
         double ext0, ext1;
-	
+
 	{
 		const int nthreads = omp_get_max_threads();
 
@@ -115,6 +115,7 @@ void extent(const int N, const double* const x, const double* const y,
          hpx::parallel::static_chunk_size param;
          hpx::parallel::execution::parallel_task_policy par_policy;
          auto policy = par_policy.with(param);
+
 #ifdef PRINT
     std::cout << "[tree_prepare.h] in function extent: about to launch Minmax element search." << std::endl;
 #endif
@@ -129,6 +130,7 @@ void extent(const int N, const double* const x, const double* const y,
 #ifdef PRINT
     std::cout << "[tree_prepare.h] in function extent: Minmax element search launched on Y." << std::endl;
 #endif
+
 
                 auto minmaxX = minmaxX_.get();
                 auto minmaxY = minmaxY_.get();
@@ -272,7 +274,7 @@ void reorder(const int N, const int* const keys, const double* const x, const do
 	for(int i = 0; i < N; ++i)
 	{
 		const int entry = keys[i];
-		
+
 		xsorted[i] = x[entry];
 		ysorted[i] = y[entry];
 		msorted[i] = m[entry];
@@ -376,7 +378,7 @@ int lower_bound_vec(int s, int e, const int val, const int keys[])
 			s = MAX(s, candidate_s);
 			e = MIN(e, candidate_e);
 		}
-	
+
 		c = MIN(c / 8, e - s);
 	}
 
@@ -403,7 +405,7 @@ int upper_bound_vec(int s, int e, const int val, const int keys[])
 		{
 			//int candidate_s = s0, candidate_e = e0;
 			const int i = MIN(e0 - 1, (int)(s0 + programIndex * h + 0.499999f));
-	
+
 			const bool isless = keys[i] <= val;
 			const int candidate_s = isless ? i : s0;
 			const int candidate_e = isless ? e0 : i;
@@ -411,10 +413,9 @@ int upper_bound_vec(int s, int e, const int val, const int keys[])
 			s = MAX(s, candidate_s);
 			e = MIN(e, candidate_e);
 		}
-	
+
 		c = MIN(c / 8, e - s);
 	}
 
 	return s + 1;
 }
-

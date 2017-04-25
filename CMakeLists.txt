@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(Vortex-HPX CXX)
 
 set(CXX g++-5) # Use g++ version 5 (required to use openMP)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -g -fopenmp -march=native -mtune=native -D ORDER=12 -MP -MD")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -g -fopenmp -march=native -Wunused-result -mtune=native -D ORDER=12 -MP -MD")
 
 # option to run the program with OpenMP rather than HPX
 option(VORTEX_WITH_OPENMP "Use OpenMP for multithreading" OFF)
