@@ -21,6 +21,7 @@
 #include <hpx/include/async.hpp>
 #include <hpx/include/util.hpp>
 #include <hpx/include/actions.hpp>
+#include <hpx/parallel/executors.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
@@ -31,6 +32,7 @@
 #endif
 
 //! Define executors:
+hpx::parallel::main_pool_executor exec_main;
 
 class TreeBuilder
 {
@@ -251,7 +253,7 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid, std::uint64_t hp
 
         if (use_tasks) {
             exp_and_child_fut.push_back(
-                    std::move(hpx::async(
+                    std::move(hpx::async(exec_main, 
                             hpx::util::annotated_function(
                                     [&,chId,hpx_task_threshold]()->hpx::future<void>
                                     {
