@@ -21,16 +21,21 @@
 #include <hpx/include/async.hpp>
 #include <hpx/include/util.hpp>
 #include <hpx/include/actions.hpp>
+#include <hpx/parallel/executors.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <utility>
 #include <string>
 #include <boost/format.hpp>
-
 #endif
 
-//! Define executors:
+//! executors
+hpx::parallel::default_executor exec_c0(0);
+hpx::parallel::default_executor exec_c1(1);
+hpx::parallel::default_executor exec_c2(2);
+hpx::parallel::default_executor exec_c3(3);
+
 
 class TreeBuilder
 {
@@ -60,7 +65,8 @@ public:
 #ifdef RUN_WITH_OMP
     void build_tree_omp(const int nodeid); // using openMP tasking
 #else
-    hpx::future<void> build_tree_hpx(const int nodeid, std::uint64_t hpx_task_threshold); // spawning HPX tasks
+    hpx::future<void> build_tree_hpx(const int nodeid, std::uint64_t hpx_task_threshold, hpx::threads::executor* exec); // spawning HPX tasks
+    hpx::future<void> build_tree_hpx_l1(const int nodeid, std::uint64_t hpx_task_threshold); // spawning HPX tasks
 #endif
 };
 
@@ -143,10 +149,10 @@ void TreeBuilder::build_tree_omp(const int nodeid)
 //! each execution of build_tree_hpx returns in one of these 2 ways:
 //! 1. if leaf == true, it returns a future<void> which will be ready when p2e is ready
 //! 2. if leaf == false, it returns a future<void> which will be ready when its own p2e, and the build_tree_hpx of each one of its children are ready
-hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid, std::uint64_t hpx_task_threshold)
+hpx::future<void> TreeBuilder::build_tree_hpx_l1(const int nodeid, std::uint64_t hpx_task_threshold)
 {
 #ifdef PRINT
-    std::cout << "Curr # nodes : " << currnnodes.load() << ", curr nodeid : " << nodeid << std::endl;
+    std::cout << "[build_tree_hpx - Level 1] Curr # nodes : " << currnnodes.load() << ", curr nodeid : " << nodeid << std::endl;
 #endif
     Node * const node = nodes + nodeid;
 
@@ -233,6 +239,234 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid, std::uint64_t hp
 
     node->child_id = childbase;
 
+    int c = 0;    //! Quadrant 1 (00)
+    c = 0;
+    {
+        const int shift = 2 * (LMAX - l - 1);
+
+        const int key1 = mId | (c << shift);
+        const int key2 = key1 + (1 << shift) - 1;
+
+        const size_t indexmin = s + c == 0 ? s : lower_bound_vec(s, e, key1, keydata); //! put for_loop in lower_bound code
+        const size_t indexsup = s + c == 3 ? e : upper_bound_vec(s, e, key2, keydata); //! put for_loop in upper_bound code
+
+        const int chId = childbase + c;
+#ifdef PRINT
+        std::cout << "launching build for ChildId : " << chId << std::endl;
+#endif
+        nodes[chId].setup(indexmin, indexsup, l + 1, key1, nodeid);
+
+        if (use_tasks) {
+            exp_and_child_fut.push_back(
+                    std::move(hpx::async(exec_c0,
+                            hpx::util::annotated_function(
+                                    [&,chId,hpx_task_threshold]()->hpx::future<void>
+                                    {
+                                        return build_tree_hpx(chId, hpx_task_threshold, &exec_c0);
+                                    }, "build_tree_rec")
+                    )));
+        }
+        else {
+            build_tree_hpx(chId, hpx_task_threshold, &exec_c0);
+        }
+    }
+
+
+    c = 1;  //! Quadrant 2 (01)
+    {
+        const int shift = 2 * (LMAX - l - 1);
+
+        const int key1 = mId | (c << shift);
+        const int key2 = key1 + (1 << shift) - 1;
+
+        const size_t indexmin = s + c == 0 ? s : lower_bound_vec(s, e, key1, keydata); //! put for_loop in lower_bound code
+        const size_t indexsup = s + c == 3 ? e : upper_bound_vec(s, e, key2, keydata); //! put for_loop in upper_bound code
+
+        const int chId = childbase + c;
+#ifdef PRINT
+        std::cout << "launching build for ChildId : " << chId << std::endl;
+#endif
+        nodes[chId].setup(indexmin, indexsup, l + 1, key1, nodeid);
+
+        if (use_tasks) {
+            exp_and_child_fut.push_back(
+                    std::move(hpx::async(exec_c0,
+                            hpx::util::annotated_function(
+                                    [&,chId,hpx_task_threshold]()->hpx::future<void>
+                                    {
+                                        return build_tree_hpx(chId, hpx_task_threshold, &exec_c0);
+                                    }, "build_tree_rec")
+                    )));
+        }
+        else {
+            build_tree_hpx(chId, hpx_task_threshold, &exec_c0);
+        }
+    }
+
+
+    c = 2; //! Quadrant 3 (10)
+    {
+        const int shift = 2 * (LMAX - l - 1);
+
+        const int key1 = mId | (c << shift);
+        const int key2 = key1 + (1 << shift) - 1;
+
+        const size_t indexmin = s + c == 0 ? s : lower_bound_vec(s, e, key1, keydata); //! put for_loop in lower_bound code
+        const size_t indexsup = s + c == 3 ? e : upper_bound_vec(s, e, key2, keydata); //! put for_loop in upper_bound code
+
+        const int chId = childbase + c;
+#ifdef PRINT
+        std::cout << "launching build for ChildId : " << chId << std::endl;
+#endif
+        nodes[chId].setup(indexmin, indexsup, l + 1, key1, nodeid);
+
+        if (use_tasks) {
+            exp_and_child_fut.push_back(
+                    std::move(hpx::async(exec_c0,
+                            hpx::util::annotated_function(
+                                    [&,chId,hpx_task_threshold]()->hpx::future<void>
+                                    {
+                                        return build_tree_hpx(chId, hpx_task_threshold, &exec_c0);
+                                    }, "build_tree_rec")
+                    )));
+        }
+        else {
+            build_tree_hpx(chId, hpx_task_threshold, &exec_c0);
+        }
+    }
+
+    c = 3;     //! Quadrant 4 (11)
+    {
+        const int shift = 2 * (LMAX - l - 1);
+
+        const int key1 = mId | (c << shift);
+        const int key2 = key1 + (1 << shift) - 1;
+
+        const size_t indexmin = s + c == 0 ? s : lower_bound_vec(s, e, key1, keydata); //! put for_loop in lower_bound code
+        const size_t indexsup = s + c == 3 ? e : upper_bound_vec(s, e, key2, keydata); //! put for_loop in upper_bound code
+
+        const int chId = childbase + c;
+#ifdef PRINT
+        std::cout << "launching build for ChildId : " << chId << std::endl;
+#endif
+        nodes[chId].setup(indexmin, indexsup, l + 1, key1, nodeid);
+
+        if (use_tasks) {
+            exp_and_child_fut.push_back(
+                    std::move(hpx::async(exec_c3,
+                            hpx::util::annotated_function(
+                                    [&,chId,hpx_task_threshold]()->hpx::future<void>
+                                    {
+                                        return build_tree_hpx(chId, hpx_task_threshold, &exec_c3);
+                                    }, "build_tree_rec")
+                    )));
+        }
+        else {
+            build_tree_hpx(chId, hpx_task_threshold, &exec_c3);
+        }
+    }
+
+#ifdef PRINT
+    std::cout << "--children all launched--" << exp_and_child_fut.size() << std::endl;
+#endif
+    //! Asynchronously wait for all the futures in the vector of futures
+    if (use_tasks) {
+        return hpx::when_all(exp_and_child_fut); //! this would be the "correct" thing to do. Just trying the other one for debugging
+    }
+    //
+    return hpx::make_ready_future();
+}
+
+hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid, std::uint64_t hpx_task_threshold, hpx::threads::executor* exec)
+{
+#ifdef PRINT
+    std::cout << "[build_tree_hpx] Curr # nodes : " << currnnodes.load() << ", curr nodeid : " << nodeid << std::endl;
+#endif
+    Node * const node = nodes + nodeid;
+
+    const int  s    = node->part_start;
+    const int  e    = node->part_end;
+    const int  l    = node->level;
+    const int  mId  = node->morton_id;
+    const bool leaf = e - s <= K || l + 1 > LMAX; // K is 32
+#ifdef PRINT
+    std::cout << " n : " << node << std::endl << " s : " << s    << std::endl  << " e : " << e    << std::endl
+              << " l : " << l    << std::endl << " m : " << mId  << std::endl  << " ? : " << leaf << std::endl;
+#endif
+
+    bool use_tasks = (e-s) > hpx_task_threshold;
+
+    hpx::future<void> p2e_fut;
+
+    if (use_tasks) {
+        hpx::future<void> setup = hpx::async(*exec,
+                hpx::util::annotated_function(
+                        [&,node,s,e,l,mId,leaf](){
+    #ifdef PRINT
+            std::cout << "--before nodesetup--" << std::endl
+                            << "x " << xdata+s << ", n " << e-s
+                            << ", m " << node->mass << ", xc " << node->xcom << ", r " << node->r << std::endl;
+    #endif
+            node_setup(xdata + s, ydata + s, mdata + s, e - s,
+                   node->mass, node->xcom, node->ycom, node->r);
+    #ifdef PRINT
+          std::cout << "--after nodesetup--" << std::endl
+              << "x " << xdata+s << ", n " << e-s
+              << ", m " << node->mass << ", xc " << node->xcom << ", r " << node->r << std::endl;
+    #endif
+          }, "node_setup"));
+
+        p2e_fut = setup.then(*exec,
+                hpx::util::annotated_function(
+                [&,node,nodeid,s,e](hpx::future<void> fv)
+                {
+                    p2e(xdata + s, ydata + s, mdata + s, e - s,
+                        node->xcom, node->ycom,
+                        expansions + 2*nodeid*ORDER,
+                        expansions + 2*nodeid*ORDER + ORDER);
+          }, "p2e"));
+    }
+    else {
+        node_setup(xdata + s, ydata + s, mdata + s, e - s,
+               node->mass, node->xcom, node->ycom, node->r);
+        p2e(xdata + s, ydata + s, mdata + s, e - s,
+            node->xcom, node->ycom,
+            expansions + 2*nodeid*ORDER,
+            expansions + 2*nodeid*ORDER + ORDER);
+    }
+
+
+    if (leaf) {
+#ifdef PRINT
+        std::cout << "--leaf--" << std::endl;
+#endif
+        if (use_tasks) {
+            return p2e_fut;
+        }
+        else {
+            return hpx::make_ready_future();
+        }
+    }
+
+    std::vector<hpx::future<void>> exp_and_child_fut;
+    exp_and_child_fut.reserve(5);
+    exp_and_child_fut.push_back(std::move(p2e_fut));
+
+    //! atomically fetch the value of the last index in the array of nodes, and increment this index by 4 positions
+    int childbase;
+    childbase = currnnodes.fetch_add(4);
+#ifdef PRINT
+    std::cout << "Childbase index is at : " << childbase << std::endl;
+#endif
+#ifdef CHECK_ASSERT
+    assert(nodeid < childbase);
+    if (childbase + 4 >= maxnodes)
+        printf("node %d, chbase %d, maxnodes %d\n", nodeid, childbase, maxnodes);
+    assert(childbase + 4 < maxnodes);
+#endif
+
+    node->child_id = childbase;
+
     for(int c = 0; c < 4; ++c)
     {
         const int shift = 2 * (LMAX - l - 1);
@@ -251,16 +485,16 @@ hpx::future<void> TreeBuilder::build_tree_hpx(const int nodeid, std::uint64_t hp
 
         if (use_tasks) {
             exp_and_child_fut.push_back(
-                    std::move(hpx::async(
+                    std::move(hpx::async(*exec,
                             hpx::util::annotated_function(
-                                    [&,chId,hpx_task_threshold]()->hpx::future<void>
+                                    [&,chId,hpx_task_threshold,exec]()->hpx::future<void>
                                     {
-                                        return build_tree_hpx(chId, hpx_task_threshold);
+                                        return build_tree_hpx(chId, hpx_task_threshold, exec);
                                     }, "build_tree_rec")
                     )));
         }
         else {
-            build_tree_hpx(chId, hpx_task_threshold);
+            build_tree_hpx(chId, hpx_task_threshold, exec);
         }
     }
 
@@ -427,7 +661,7 @@ hpx::future<void> build(const double* const x, const double*const y, const doubl
     hpx::async(hpx::launch::sync,
                hpx::util::annotated_function(
                        [&]() {
-                           tree_fut = builder->build_tree_hpx(0, hpx_task_threshold);
+                           tree_fut = builder->build_tree_hpx_l1(0, hpx_task_threshold);
                        },"build_tree_rec_0"
                ));
 #ifdef PRINT
