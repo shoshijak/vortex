@@ -21,7 +21,7 @@ int hpx_main(boost::program_options::variables_map& vm)
 
   double extT, mrtT, srtT, reoT, bldT, evaT, potT;
   int n, nnodes, NDST;
-  int numtests = 1;
+  int numtests = 5;
   bool printeach = true;
 
   run_test(extT, mrtT, srtT, reoT, bldT, evaT, potT,
