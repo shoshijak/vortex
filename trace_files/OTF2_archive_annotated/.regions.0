@@ -1,0 +1,15 @@
+0	run_helper
+1	load_components_action
+2	pre_main
+3	call_startup_functions_action
+4	create_performance_counter_action
+5	apex::process_profiles
+6	performance_counter_start_action
+7	task_object::apply
+8	hpx_main
+9	dataflow_frame::finalize
+10	set state for active thread
+11	<unknown>
+12	node_setup
+13	build_tree_rec
+14	p2e

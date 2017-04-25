@@ -26,10 +26,11 @@
 #include <iostream>
 #include <utility>
 #include <string>
-
 #include <boost/format.hpp>
 
 #endif
+
+//! Define executors:
 
 class TreeBuilder
 {

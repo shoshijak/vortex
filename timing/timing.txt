@@ -1,0 +1,31 @@
+
+Running with HPX (1 thread)
+AVERAGE TIME for 15 runs and for N = 216064 (18085 nodes)  is  361.86 ms
+	extent:   1.84 ms
+	morton:   3.17 ms
+	sorting:  10.73 ms
+	reordering:   2.31 ms
+	building: 343.81 ms
+Evaluation took 6.253 ms (17.665 us per target)
+solved in 369.23 ms
+
+
+Running with HPX (4 threads)
+AVERAGE TIME for 15 runs and for N = 216064 (18085 nodes)  is  129.40 ms
+	extent:   1.92 ms
+	morton:   2.55 ms
+	sorting:   8.01 ms
+	reordering:   1.40 ms
+	building: 115.52 ms
+	solving: 2.990 ms (8.446 us per target)
+
+
+Running with OpenMP
+AVERAGE TIME for 15 runs and for N = 216064 (18085 nodes)  is   38.18 ms
+	extent:   2.33 ms
+	morton:   1.53 ms
+	sorting:   4.66 ms
+	reordering:   1.52 ms
+	building:  28.14 ms
+	solving: 2.533 ms (7.156 us per target)
+

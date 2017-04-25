@@ -1,0 +1,58 @@
+
+Running with HPX (4 threads)
+AVERAGE TIME for 15 runs and for N = 216064 (18085 nodes)  is  108.94 ms
+	extent:   0.64 ms
+	morton:   1.25 ms
+	sorting:   7.44 ms
+	reordering:   1.56 ms
+	building:  98.05 ms
+Evaluation took 2.775 ms (7.838 us per target)
+solved in 112.57 ms
+/threads{locality#0/total}/count/cumulative : 615837
+Running VORTEX application - with HPX
+
+unning with HPX (4 threads)
+AVERAGE TIME for 15 runs and for N = 216064 (18085 nodes)  is  118.19 ms
+	extent:   2.57 ms
+	morton:   1.91 ms
+	sorting:  10.40 ms
+	reordering:   1.71 ms
+	building: 101.59 ms
+Evaluation took 3.546 ms (10.017 us per target)
+solved in 122.57 ms
+/threads{locality#0/total}/count/cumulative : 613005
+Running VORTEX application - with HPX
+
+Running with HPX (4 threads)
+AVERAGE TIME for 15 runs and for N = 216064 (18085 nodes)  is  107.32 ms
+	extent:   0.99 ms
+	morton:   1.19 ms
+	sorting:   7.20 ms
+	reordering:   2.30 ms
+	building:  95.64 ms
+Evaluation took 2.637 ms (7.448 us per target)
+solved in 110.85 ms
+/threads{locality#0/total}/count/cumulative : 623680
+Running VORTEX application - with HPX
+
+AVERAGE TIME for 15 runs and for N = 216064 (18085 nodes)  is  118.80 ms
+	extent:   2.17 ms
+	morton:   2.21 ms
+	sorting:   8.33 ms
+	reordering:   2.13 ms
+	building: 103.96 ms
+Evaluation took 3.425 ms (9.674 us per target)
+solved in 123.07 ms
+/threads{locality#0/total}/count/cumulative : 614085
+Running VORTEX application - with HPX
+
+Running with OpenMP
+AVERAGE TIME for 200 runs and for N = 216064 (18085 nodes)  is   59.33 ms
+	extent:   3.67 ms
+	morton:   2.77 ms
+	sorting:  11.79 ms
+	reordering:   2.40 ms
+	building:  38.69 ms
+Evaluation took 5.677 ms (16.038 us per target)
+solved in 66.08 ms
+
